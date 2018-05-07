@@ -1,0 +1,43 @@
+﻿@page "/"
+@using Sample.Models
+@inject Context Context
+@using BlazorDB
+
+<h1>BlazorDB Demo Site</h1>
+
+<button onclick="@onclickAddPerson">Add Person</button>
+
+<button onclick="@onclickGetPerson">Get Person</button>
+
+<button onclick="@onclickSaveChanges">SaveChanges</button>
+
+
+@if (@Person != null)
+{
+    <div>
+        Person: @Person.FirstName @Person.LastName
+    </div>
+}
+
+@functions {
+    private Person Person { get; set; }
+    void onclickAddPerson()
+    {
+        var person = new Person { Id = 1, FirstName = "John", LastName = "Smith" };
+        Context.People.Add(person);
+    }
+
+    void onclickGetPerson()
+    {
+        var query = from person in Context.People
+                    where person.Id == 1
+                    select person;
+        Person = query.Single();
+        StateHasChanged();
+    }
+
+    void onclickSaveChanges()
+    {
+        Context.SaveChanges();
+    }
+}
