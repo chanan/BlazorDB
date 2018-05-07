@@ -6,6 +6,13 @@
     <IsPackable>true</IsPackable>
     <BlazorLinkOnBuild>false</BlazorLinkOnBuild>
     <LangVersion>7.3</LangVersion>
+    <PackageId>BlazorDB</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Chanan Braunstein</Authors>
+    <Title>Blazor localStorage Database</Title>
+    <Description>In memory, persisted to localstorage, database for .net Blazor browser framework</Description>
+    <PackageTags>blazor;database;linq;localstorage</PackageTags>
+    <RepositoryUrl>https://github.com/chanan/BlazorDB</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
