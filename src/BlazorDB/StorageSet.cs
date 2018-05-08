@@ -5,6 +5,7 @@ namespace BlazorDB
 {
     public class StorageSet<TModel> : IList<TModel> where TModel : class
     {
+        private string StorageContextTypeName { get; set; } 
         private IList<TModel> List { get; set; } = new List<TModel>();
         public TModel this[int index] { get => List[index]; set => List[index] = value; }
 
@@ -15,6 +16,7 @@ namespace BlazorDB
         public void Add(TModel item)
         {
             List.Add(item);
+            Logger.ItemAddedToContext(StorageContextTypeName, item.GetType());
         }
 
         public void Clear()
@@ -49,7 +51,9 @@ namespace BlazorDB
 
         public bool Remove(TModel item)
         {
-            return List.Remove(item);
+            var removed = List.Remove(item);
+            if (removed) Logger.ItemRemovedFromContext(StorageContextTypeName, item.GetType());
+            return removed;
         }
 
         public void RemoveAt(int index)

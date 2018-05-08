@@ -6,6 +6,8 @@
 
 <button onclick="@onclickAddPerson">Add Person</button>
 
+<button onclick="@onclickRemovePerson">Remove Person</button>
+
 <button onclick="@onclickGetPerson">Get Person</button>
 
 <button onclick="@onclickSaveChanges">SaveChanges</button>
@@ -24,6 +26,15 @@
     {
         var person = new Person { Id = 1, FirstName = "John", LastName = "Smith" };
         Context.People.Add(person);
+    }
+
+    void onclickRemovePerson()
+    {
+        var query = from person in Context.People
+                    where person.Id == 1
+                    select person;
+        var personToRemove = query.Single();
+        Context.People.Remove(personToRemove);
     }
 
     void onclickGetPerson()

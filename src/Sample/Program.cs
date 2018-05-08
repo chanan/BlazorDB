@@ -1,7 +1,6 @@
 ﻿using BlazorDB;
 using Microsoft.AspNetCore.Blazor.Browser.Rendering;
 using Microsoft.AspNetCore.Blazor.Browser.Services;
-using System;
 
 namespace Sample
 {
@@ -11,7 +10,11 @@ namespace Sample
         {
             var serviceProvider = new BrowserServiceProvider(services =>
             {
-                services.AddBlazorDB(typeof(Program).Assembly);
+                services.AddBlazorDB(options =>
+                {
+                    options.LogDebug = true;
+                    options.Assembly = typeof(Program).Assembly;
+                });
             });
             new BrowserRenderer(serviceProvider).AddComponent<App>("app");
         }
