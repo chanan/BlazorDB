@@ -12,13 +12,13 @@ So far the the API is very simplestic but works.
 First add a reference to the nuget package:
 
 ```
-Install-Package BlazorDB -Version 0.0.1
+Install-Package BlazorDB -Version 0.0.2
 ```
 
 or
 
 ```
-dotnet add package BlazorDB --version 0.0.1
+dotnet add package BlazorDB --version 0.0.2
 ```
 
 Then in Program.cs add Blazor DB to the dependency injection services:
@@ -26,10 +26,16 @@ Then in Program.cs add Blazor DB to the dependency injection services:
 ```
 var serviceProvider = new BrowserServiceProvider(services =>
 {
-    services.AddBlazorDB(typeof(Program).Assembly);
+    services.AddBlazorDB(options =>
+    {
+        options.LogDebug = true;
+        options.Assembly = typeof(Program).Assembly;
+    });
 });
 new BrowserRenderer(serviceProvider).AddComponent<App>("app");
 ```
+
+Set `LogDebug` to see debug output in the browser console.
 
 ### Setup
 
@@ -45,6 +51,8 @@ public class Person
     public string LastName { get; set; }
 }
 ```
+
+if the field `public int Id { get; set; }` exists it will be managed by BlazorDB
 
 and a context, for example, Context.cs:
 ```
@@ -67,9 +75,11 @@ Inject your context into your component:
 Create a model and add it to your Context:
 
 ```
-var person = new Person { Id = 1, FirstName = "John", LastName = "Smith" };
+var person = new Person { FirstName = "John", LastName = "Smith" };
 Context.People.Add(person);
 ```
+
+Do not set the Id field. It will be assigned by BlazorDB.
 
 Call SaveChanges:
 

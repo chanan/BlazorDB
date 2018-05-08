@@ -46,7 +46,7 @@ namespace BlazorDB
                     }
                 }
                 RegisterContext(serviceCollection, contextType, context);
-                Logger.EndContextType();
+                Logger.EndGroup();
             }
         }
 

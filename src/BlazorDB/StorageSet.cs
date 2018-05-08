@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace BlazorDB
@@ -15,8 +16,45 @@ namespace BlazorDB
 
         public void Add(TModel item)
         {
+            if(HasId(item))
+            {
+                var id = GetId(item);
+                if (id > 0) throw new ArgumentException("Can't add item to set that already has an Id", "Id");
+                id = SetId(item);
+                Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), id, item);
+            }
+            else
+            {
+                Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), item);
+            }
             List.Add(item);
-            Logger.ItemAddedToContext(StorageContextTypeName, item.GetType());
+        }
+
+        //TODO: Consider using an "Id table"
+        private int SetId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            int max = 0;
+            foreach (var i in List)
+            {
+                int currentId = (int)prop.GetValue(i);
+                if (currentId > max) max = currentId;
+            }
+            int id = max + 1;
+            prop.SetValue(item, id);
+            return id;
+        }
+
+        private int GetId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            return (int)prop.GetValue(item);
+        }
+
+        private bool HasId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            return prop != null;
         }
 
         public void Clear()

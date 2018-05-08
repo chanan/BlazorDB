@@ -24,7 +24,7 @@
     private Person Person { get; set; }
     void onclickAddPerson()
     {
-        var person = new Person { Id = 1, FirstName = "John", LastName = "Smith" };
+        var person = new Person { FirstName = "John", LastName = "Smith" };
         Context.People.Add(person);
     }
 
