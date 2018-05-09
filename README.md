@@ -113,4 +113,4 @@ A Todo sample built with BlazorDB is included in the sample project:
 
 ## Storage Format
 
-[Storage Format Doc](https://github.com/chanan/BlazorDB/docs/storageFormat.md)
+[Storage Format Doc](https://github.com/chanan/BlazorDB/blob/master/docs/storageFormat.md)
