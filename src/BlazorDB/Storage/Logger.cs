@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BlazorDB
+namespace BlazorDB.Storage
 {
     internal static class Logger
     {
