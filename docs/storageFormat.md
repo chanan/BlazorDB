@@ -2,18 +2,20 @@
 
 ## Models
 
-`{FQN context class}-{FQN model class}-{Id}`
+`{FQN context class}-{FQN model class}-{Guid}`
 
-Each file stores the json serialized output of the model. One "row".
+Contents:
 
-Questions:
-
-1. What about models with no Id field?
-2. What if the Id is changed?
-3. What if the Id is changed to a duplicate another model with the same Id?
+* Each file stores the json serialized output of the model. One "row".
 
 ## Metadata
 
 `{FQN context class}-{FQN model class}-{metadata}`
 
-Metadata file will store metadata about the StorageSet such as index inforamtion.
+Contents:
+
+* Guids - List of persisted guids
+
+Initial implementation will regenerate the guid on every `SaveChanges()` and the list in the metadata table. Future implementation might store metadata about the model in the model value itself, so the guid will be loaded into memory and won't be regenerated.  
+
+Future items that might be stored in the the metadata file would be items such as index infromation
