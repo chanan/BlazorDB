@@ -65,6 +65,7 @@ public class Context : StorageContext
 ### Usage
 
 See the full example in the sample app: https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Index.cshtml
+
 Inject your context into your component:
 
 ```
@@ -102,3 +103,10 @@ void onclickGetPerson()
     StateHasChanged();
 }
 ```
+
+## Example
+
+A Todo sample built with BlazorDB is included in the sample project:
+
+* [Todos.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.cshtml)
+* [TodoItemForm.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.cshtml)
