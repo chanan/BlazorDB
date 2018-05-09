@@ -110,3 +110,7 @@ A Todo sample built with BlazorDB is included in the sample project:
 
 * [Todos.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.cshtml)
 * [TodoItemForm.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.cshtml)
+
+## Storage Format
+
+[Storage Format Doc](https://github.com/chanan/BlazorDB/docs/storageFormat.md)
