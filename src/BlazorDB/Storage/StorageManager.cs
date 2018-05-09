@@ -27,15 +27,45 @@ namespace BlazorDB.Storage
                     var modelType = prop.PropertyType.GetGenericArguments()[0];
                     var storageTableName = Util.GetStorageTableName(contextType, modelType);
                     var guids = SaveModels(storageSetValue, modelType, storageTableName);
-                    //BlazorDBInterop.SetItem(storageTableName, JsonUtil.Serialize(storageSetValue), false);
-                    //var count = GetListCount(context, prop);
                     total += guids.Count;
+                    var oldMetadata = LoadMetadata(storageTableName);
                     SaveMetadata(storageTableName, guids, contextType, modelType);
+                    if (oldMetadata != null) DeleteOldModelsFromStorage(oldMetadata, storageTableName);
                     Logger.StorageSetSaved(modelType, guids.Count);
                 }
             }
             Logger.EndGroup();
             return total;
+        }
+
+        public static void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
+        {
+            var context = Activator.CreateInstance(contextType);
+            Logger.StartContextType(contextType);
+            foreach (var prop in contextType.GetProperties())
+            {
+                if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>))
+                {
+                    var modelType = prop.PropertyType.GetGenericArguments()[0];
+                    Logger.LoadModelInContext(modelType);
+                    var storageSetType = genericStorageSetType.MakeGenericType(modelType);
+                    var storageTableName = Util.GetStorageTableName(contextType, modelType);
+                    var metadata = LoadMetadata(storageTableName);
+                    var storageSet = metadata != null ? LoadStorageSet(metadata, storageTableName, storageSetType, contextType, modelType) : CreateNewStorageSet(storageSetType);
+                    prop.SetValue(context, storageSet);
+                }
+            }
+            RegisterContext(serviceCollection, contextType, context);
+            Logger.EndGroup();
+        }
+
+        private static void DeleteOldModelsFromStorage(Metadata metadata, string storageTableName)
+        {
+            foreach (var guid in metadata.Guids)
+            {
+                var name = $"{storageTableName}-{guid}";
+                BlazorDBInterop.RemoveItem(name, false);
+            }
         }
 
         private static void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType)
@@ -61,27 +91,6 @@ namespace BlazorDB.Storage
                 BlazorDBInterop.SetItem(name, JsonUtil.Serialize(item), false);
             }
             return guids;
-        }
-
-        public static void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
-        {
-            var context = Activator.CreateInstance(contextType);
-            Logger.StartContextType(contextType);
-            foreach (var prop in contextType.GetProperties())
-            {
-                if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>))
-                {
-                    var modelType = prop.PropertyType.GetGenericArguments()[0];
-                    Logger.LoadModelInContext(modelType);
-                    var storageSetType = genericStorageSetType.MakeGenericType(modelType);
-                    var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                    var metadata = LoadMetadata(storageTableName);
-                    var storageSet = metadata != null ? LoadStorageSet(metadata, storageTableName, storageSetType, contextType, modelType) : CreateNewStorageSet(storageSetType);
-                    prop.SetValue(context, storageSet);
-                }
-            }
-            RegisterContext(serviceCollection, contextType, context);
-            Logger.EndGroup();
         }
 
         private static Metadata LoadMetadata(string storageTableName)
@@ -117,7 +126,6 @@ namespace BlazorDB.Storage
                 var model = Deserialize(modelType, value);
                 var addMethod = listGenericType.GetMethod("Add");
                 addMethod.Invoke(list, new object[] { model });
-                //return value != null ? SetList(instance, Deserialize(modelType, value)) : instance;
             }
             return SetList(instance, list);
         }
