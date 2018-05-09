@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using Microsoft.AspNetCore.Blazor;
@@ -11,27 +12,55 @@ namespace BlazorDB.Storage
         private static readonly Type storageContext = typeof(StorageContext);
         private static readonly Type genericStorageSetType = typeof(StorageSet<>);
         private static readonly Type genericListType = typeof(List<>);
+        private static readonly BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
         public static int SaveContextToLocalStorage(StorageContext context)
         {
             int total = 0;
-            var type = context.GetType();
-            Logger.ContextSaved(type);
-            foreach (var prop in type.GetProperties())
+            var contextType = context.GetType();
+            Logger.ContextSaved(contextType);
+            foreach (var prop in contextType.GetProperties())
             {
                 if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>))
                 {
                     var storageSetValue = prop.GetValue(context);
                     var modelType = prop.PropertyType.GetGenericArguments()[0];
-                    var storageTableName = Util.GetStorageTableName(type, modelType);
-                    BlazorDBInterop.SetItem(storageTableName, JsonUtil.Serialize(storageSetValue), false);
-                    var count = GetListCount(context, prop);
-                    Logger.StorageSetSaved(modelType, count);
-                    total += count;
+                    var storageTableName = Util.GetStorageTableName(contextType, modelType);
+                    var guids = SaveModels(storageSetValue, modelType, storageTableName);
+                    //BlazorDBInterop.SetItem(storageTableName, JsonUtil.Serialize(storageSetValue), false);
+                    //var count = GetListCount(context, prop);
+                    total += guids.Count;
+                    SaveMetadata(storageTableName, guids, contextType, modelType);
+                    Logger.StorageSetSaved(modelType, guids.Count);
                 }
             }
             Logger.EndGroup();
             return total;
+        }
+
+        private static void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType)
+        {
+            var metadata = new Metadata { Guids = guids, ContextName = Util.GetFullyQualifiedTypeName(context), ModelName = Util.GetFullyQualifiedTypeName(modelType) };
+            var name = $"{storageTableName}-metadata";
+            BlazorDBInterop.SetItem(name, JsonUtil.Serialize(metadata), false);
+
+        }
+
+        private static List<Guid> SaveModels(object storageSetValue, Type modelType, string storageTableName)
+        {
+            var guids = new List<Guid>();
+            var storageSetType = genericStorageSetType.MakeGenericType(modelType);
+            var method = storageSetType.GetMethod("GetEnumerator");
+            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
+            while (enumerator.MoveNext())
+            {
+                var guid = Guid.NewGuid();
+                guids.Add(guid);
+                var item = enumerator.Current;
+                var name = $"{storageTableName}-{guid}";
+                BlazorDBInterop.SetItem(name, JsonUtil.Serialize(item), false);
+            }
+            return guids;
         }
 
         public static void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
@@ -45,12 +74,21 @@ namespace BlazorDB.Storage
                     var modelType = prop.PropertyType.GetGenericArguments()[0];
                     Logger.LoadModelInContext(modelType);
                     var storageSetType = genericStorageSetType.MakeGenericType(modelType);
-                    var storageSet = GetStorageSet(storageSetType, contextType, modelType);
+                    var storageTableName = Util.GetStorageTableName(contextType, modelType);
+                    var metadata = LoadMetadata(storageTableName);
+                    var storageSet = metadata != null ? LoadStorageSet(metadata, storageTableName, storageSetType, contextType, modelType) : CreateNewStorageSet(storageSetType);
                     prop.SetValue(context, storageSet);
                 }
             }
             RegisterContext(serviceCollection, contextType, context);
             Logger.EndGroup();
+        }
+
+        private static Metadata LoadMetadata(string storageTableName)
+        {
+            var name = $"{storageTableName}-metadata";
+            var value = BlazorDBInterop.GetItem(name, false);
+            return value != null ? JsonUtil.Deserialize<Metadata>(value) : null;
         }
 
         private static int GetListCount(StorageContext context, PropertyInfo prop)
@@ -60,19 +98,33 @@ namespace BlazorDB.Storage
             return (int)countProp.GetValue(list);
         }
 
-        private static object GetStorageSet(Type storageSetType, Type contextType, Type modelType)
+        private static object CreateNewStorageSet(Type storageSetType)
         {
-            var storageTableName = Util.GetStorageTableName(contextType, modelType);
-            var value = BlazorDBInterop.GetItem(storageTableName, false);
-            var instance = Activator.CreateInstance(storageSetType);
-            var prop = storageSetType.GetProperty("StorageContextTypeName", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            return Activator.CreateInstance(storageSetType);
+        }
+
+        private static object LoadStorageSet(Metadata metadata, string storageTableName, Type storageSetType, Type contextType, Type modelType)
+        {
+            var instance = CreateNewStorageSet(storageSetType);
+            var prop = storageSetType.GetProperty("StorageContextTypeName", flags);
             prop.SetValue(instance, Util.GetFullyQualifiedTypeName(contextType));
-            return value != null ? SetList(instance, Deserialize(modelType, value)) : instance;
+            var listGenericType = genericListType.MakeGenericType(modelType);
+            var list = Activator.CreateInstance(listGenericType);
+            foreach (var guid in metadata.Guids)
+            {
+                var name = $"{storageTableName}-{guid}";
+                var value = BlazorDBInterop.GetItem(name, false);
+                var model = Deserialize(modelType, value);
+                var addMethod = listGenericType.GetMethod("Add");
+                addMethod.Invoke(list, new object[] { model });
+                //return value != null ? SetList(instance, Deserialize(modelType, value)) : instance;
+            }
+            return SetList(instance, list);
         }
 
         private static object SetList(object instance, object list)
         {
-            var prop = instance.GetType().GetProperty("List", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            var prop = instance.GetType().GetProperty("List", flags);
             prop.SetValue(instance, list);
             return instance;
         }
@@ -80,10 +132,9 @@ namespace BlazorDB.Storage
         private static object Deserialize(Type modelType, string value)
         {
             var method = typeof(JsonWrapper).GetMethod("Deserialize");
-            var listGenericType = genericListType.MakeGenericType(modelType);
-            var genericMethod = method.MakeGenericMethod(listGenericType);
-            var list = genericMethod.Invoke(new JsonWrapper(), new object[] { value });
-            return list;
+            var genericMethod = method.MakeGenericMethod(modelType);
+            var model = genericMethod.Invoke(new JsonWrapper(), new object[] { value });
+            return model;
         }
 
         private static void RegisterContext(IServiceCollection serviceCollection, Type type, object context)

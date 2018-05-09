@@ -11,7 +11,7 @@ namespace BlazorDB
             return $"{databaseName}-{tableName}";
         }
 
-        internal static object GetFullyQualifiedTypeName(Type type)
+        internal static string GetFullyQualifiedTypeName(Type type)
         {
             return $"{type.Namespace}.{type.Name}";
         }
