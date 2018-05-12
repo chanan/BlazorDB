@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorStrap" Version="0.1.5" />
+    <PackageReference Include="BlazorStrap" Version="0.1.6" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Browser" Version="0.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="0.3.0" />
     <DotNetCliToolReference Include="Microsoft.AspNetCore.Blazor.Cli" Version="0.3.0" />
@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Pages\Associations.cshtml" />
     <None Include="Pages\TodoItemForm.cshtml" />
   </ItemGroup>
 
@@ -32,6 +33,10 @@
 
   <ItemGroup>
     <BlazorGenerate Remove="Pages\Todos.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <BlazorGenerate Remove="Pages\Associations.cshtml" />
   </ItemGroup>
 
 </Project>

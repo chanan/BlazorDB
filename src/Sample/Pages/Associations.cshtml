@@ -1,0 +1,22 @@
+﻿@page "/associations"
+@inject AssociationContext Context
+
+
+<h1>Associations</h1>
+
+<h2>One to One</h2>
+
+<BlazorButton Color="Color.Primary" onclick="@onAdd">Add a Person and Address</BlazorButton>
+
+
+@functions {
+void onAdd(UIMouseEventArgs e)
+{
+    var person = new Person { FirstName = "John", LastName = "Smith" };
+    var address = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
+    person.HomeAddress = address;
+    Context.People.Add(person);
+    Context.Addresses.Add(address);
+    Context.SaveChanges();
+}
+}
