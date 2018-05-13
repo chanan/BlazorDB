@@ -12,13 +12,13 @@ So far the the API is very simplestic but works.
 First add a reference to the nuget package:
 
 ```
-Install-Package BlazorDB -Version 0.0.2
+Install-Package BlazorDB -Version 0.0.4
 ```
 
 or
 
 ```
-dotnet add package BlazorDB --version 0.0.2
+dotnet add package BlazorDB --version 0.0.4
 ```
 
 Then in Program.cs add Blazor DB to the dependency injection services:
