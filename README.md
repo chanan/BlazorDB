@@ -39,6 +39,8 @@ Set `LogDebug` to see debug output in the browser console.
 
 ### Setup
 
+*NOTE:* Models stored by BlazorDB require that an int Id property exist on the model. The Id property will be maintained by BlazorDB, you dont need to set it yourself.
+
 Create at least one model and context for example:
 
 Person.cs:
@@ -49,6 +51,7 @@ public class Person
     public int Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
+    public Address HomeAddress { get; set; }
 }
 ```
 
@@ -103,6 +106,42 @@ void onclickGetPerson()
     StateHasChanged();
 }
 ```
+
+## Associations
+
+So far, only one to one associations work.
+
+Associations work in the same context. If you have an object in another object that is not in the context, it will be serialized to localStorage as one "complex" document.
+
+For example, in `Context.cs` only Person is in the Context and Address is not. Therefore, Person will contain Address, and Address will not be a seperate object.
+
+### One to One Association
+
+When an object refers to another object that are both in Context, they are stored as a reference, such that changing the reference will update both objects.
+
+For example, `AssociationContext.cs`:
+
+
+```
+public class AssociationContext : StorageContext
+{
+    public StorageSet<Person> People { get; set; }
+    public StorageSet<Address> Addresses { get; set; }
+}
+```
+
+`Person.cs` as shown above has a property `public Address HomeAddress { get; set; }`. Because unlike `Context.cs`, `AssociationContext.cs` does define `public StorageSet<Address> Addresses { get; set; }` references are stored as "foreign keys" instead of complex objects.
+
+Therefore, like in `Associations.cshtml` example, chaning the Address will Change the Person's HomeAddress:
+
+```
+Context.People[0].HomeAddress.Street = "Changed Streeet";
+Context.SaveChanges();
+Console.WriteLine("Person address changed: {0}", Context.People[0].HomeAddress.Street);
+Console.WriteLine("Address entity changed as well: {0}", Context.Addresses[0].Street);
+StateHasChanged();
+```
+
 
 ## Example
 
