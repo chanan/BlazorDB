@@ -9,6 +9,7 @@ namespace BlazorDB
 {
     public static class ServiceCollectionExtensions
     {
+        private static readonly IStorageManager StorageManager = new StorageManager();
         private static readonly Type storageContext = typeof(StorageContext);
 
         public static IServiceCollection AddBlazorDB(this IServiceCollection serviceCollection, Action<Options> configure)
@@ -29,6 +30,7 @@ namespace BlazorDB
 
         private static void RegisterBlazorDB(IServiceCollection serviceCollection, IEnumerable<Type> types)
         {
+            serviceCollection.AddSingleton<IStorageManager>(StorageManager);
             foreach(var contextType in types)
             {
                 StorageManager.LoadContextFromStorageOrCreateNew(serviceCollection, contextType);

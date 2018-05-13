@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using Sample.Models
 @inject Context Context
 
 <h1>BlazorDB Demo Site</h1>
@@ -24,7 +23,8 @@
     private Person Person { get; set; }
     void onclickAddPerson()
     {
-        var person = new Person { FirstName = "John", LastName = "Smith" };
+        //In this case, address gets serailized as part of the object because Address is not in the Context
+        var person = new Person { FirstName = "John", LastName = "Smith", HomeAddress = new Address { Street = "221 Baker Street", City = "This should be part of the json, since address is not in context (Very long city)" } };
         Context.People.Add(person);
     }
 

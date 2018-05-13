@@ -50,10 +50,10 @@ namespace BlazorDB.Storage
             BlazorLogger.Logger.GroupEnd();
         }
 
-        internal static void LoadModelInContext(Type modelType)
+        internal static void LoadModelInContext(Type modelType, int count)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.Log($"StorageSet loaded:  %c{modelType.Namespace}.{modelType.Name}", blue);
+            BlazorLogger.Logger.Log($"StorageSet loaded:  %c{modelType.Namespace}.{modelType.Name}%c with {count} items", blue, normal);
         }
 
         internal static void ItemRemovedFromContext(string contextTypeName, Type modelType)
