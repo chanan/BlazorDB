@@ -34,9 +34,9 @@
     void onChange(UIMouseEventArgs e)
     {
         Context.People[0].HomeAddress.Street = "Changed Streeet";
-        //Context.SaveChanges();
-        Console.WriteLine("P: {0}", Context.People[0].HomeAddress.Street);
-        Console.WriteLine("A: {0}", Context.Addresses[0].Street);
+        Context.SaveChanges();
+        Console.WriteLine("Person address changed: {0}", Context.People[0].HomeAddress.Street);
+        Console.WriteLine("Address entity changed as well: {0}", Context.Addresses[0].Street);
         StateHasChanged();
     }
 }

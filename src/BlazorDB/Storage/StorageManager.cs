@@ -39,14 +39,22 @@ namespace BlazorDB.Storage
 
         public void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
         {
-            var context = Activator.CreateInstance(contextType);
             Logger.StartContextType(contextType);
             var storageSets = GetStorageSets(contextType);
             var stringModels = LoadStringModels(contextType, storageSets);
             //PrintStringModels(stringModels);
             stringModels = ScanNonAssociationModels(storageSets, stringModels);
             stringModels = ScanAssociationModels(storageSets, stringModels);
-            stringModels = DeserializeModels(stringModels);
+            stringModels = DeserializeModels(stringModels, storageSets);
+            //PrintStringModels(stringModels);
+            var context = CreateContext(contextType, stringModels);
+            RegisterContext(serviceCollection, contextType, context);
+            Logger.EndGroup();
+        }
+
+        private object CreateContext(Type contextType, Dictionary<Type, Dictionary<int, SerializedModel>> stringModels)
+        {
+            var context = Activator.CreateInstance(contextType);
             foreach (var prop in contextType.GetProperties())
             {
                 if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>))
@@ -55,7 +63,7 @@ namespace BlazorDB.Storage
                     var storageSetType = genericStorageSetType.MakeGenericType(modelType);
                     var storageTableName = Util.GetStorageTableName(contextType, modelType);
                     var metadata = LoadMetadata(storageTableName);
-                    if(stringModels.ContainsKey(modelType))
+                    if (stringModels.ContainsKey(modelType))
                     {
                         var map = stringModels[modelType];
                         Logger.LoadModelInContext(modelType, map.Count);
@@ -68,11 +76,10 @@ namespace BlazorDB.Storage
                     prop.SetValue(context, storageSet);
                 }
             }
-            RegisterContext(serviceCollection, contextType, context);
-            Logger.EndGroup();
+            return context;
         }
 
-        private Dictionary<Type, Dictionary<int, SerializedModel>> DeserializeModels(Dictionary<Type, Dictionary<int, SerializedModel>> stringModels)
+        private Dictionary<Type, Dictionary<int, SerializedModel>> DeserializeModels(Dictionary<Type, Dictionary<int, SerializedModel>> stringModels, List<PropertyInfo> storageSets)
         {
             foreach (var map in stringModels)
             {
@@ -80,10 +87,42 @@ namespace BlazorDB.Storage
                 foreach (var sm in map.Value)
                 {
                     var stringModel = sm.Value;
-                    stringModel.Model = DeserializeModel(modelType, stringModel.StringModel);
+                    if (!stringModel.HasAssociation)
+                    {
+                        stringModel.Model = DeserializeModel(modelType, stringModel.StringModel);
+                    }
+                }
+            }
+            foreach (var map in stringModels) //TODO: Fix associations that are more than one level deep
+            {
+                Type modelType = map.Key;
+                foreach (var sm in map.Value)
+                {
+                    var stringModel = sm.Value;
+                    if(stringModel.Model == null)
+                    {
+                        var model = DeserializeModel(modelType, stringModel.StringModel);
+                        foreach (var prop in model.GetType().GetProperties())
+                        {
+                            if (IsInContext(storageSets, prop) && prop.GetValue(model) != null)
+                            {
+                                var associatedLocalModel = prop.GetValue(model);
+                                var localIdProp = associatedLocalModel.GetType().GetProperty("Id"); //TODO: Handle missing Id prop
+                                var localId = Convert.ToInt32(localIdProp.GetValue(associatedLocalModel));
+                                var associatdRemoteModel = GetModelFromStringModels(stringModels, associatedLocalModel.GetType(), localId).Model;
+                                prop.SetValue(model, associatdRemoteModel);
+                            }
+                        }
+                        stringModel.Model = model;
+                    }
                 }
             }
             return stringModels;
+        }
+
+        private SerializedModel GetModelFromStringModels(Dictionary<Type, Dictionary<int, SerializedModel>> stringModels, Type type, int localId)
+        {
+            return stringModels[type][localId];
         }
 
         private object LoadStorageSet(Metadata metadata, string storageTableName, Type storageSetType, Type contextType, Type modelType, Dictionary<int, SerializedModel> map)
@@ -138,6 +177,14 @@ namespace BlazorDB.Storage
             return found;
         }
 
+
+        //TODO: The snippet below should also check to see that the model itself has no more associations to fix, not just if it has properties.
+        /*
+         * if(HasAssociation(storageSets, modelType, stringModel))
+            {
+                stringModel.StringModel = FixAssociationsInStringModels(stringModel, modelType, storageSets, stringModels);
+                stringModel.ScanDone = true;
+            }*/
         private Dictionary<Type, Dictionary<int, SerializedModel>> ScanAssociationModels(List<PropertyInfo> storageSets, Dictionary<Type, Dictionary<int, SerializedModel>> stringModels)
         {
             var count = 0;
@@ -155,6 +202,7 @@ namespace BlazorDB.Storage
                             if(HasAssociation(storageSets, modelType, stringModel))
                             {
                                 stringModel.StringModel = FixAssociationsInStringModels(stringModel, modelType, storageSets, stringModels);
+                                stringModel.ScanDone = true;
                             }
                             else
                             {
@@ -163,7 +211,7 @@ namespace BlazorDB.Storage
                         }
                     }
                 }
-                if (count == 5) break;
+                if (count == 20) break; //Go 20 deep throw exception here?
             } while (IsScanDone(stringModels));
             return stringModels;
         }
@@ -173,12 +221,14 @@ namespace BlazorDB.Storage
             foreach (var map in stringModels)
             {
                 Type modelType = map.Key;
+                Console.WriteLine("-----------");
                 Console.WriteLine("modelType: {0}", modelType.Name);
                 foreach (var sm in map.Value)
                 {
                     var stringModel = sm.Value;
                     Console.WriteLine("sm: {0}", sm.Value.StringModel);
                     Console.WriteLine("Is Done: {0}", sm.Value.ScanDone);
+                    Console.WriteLine("Has Model: {0}", sm.Value.Model);
                 }
             }
 
@@ -321,8 +371,8 @@ namespace BlazorDB.Storage
                 if(IsInContext(storageSets, prop) && prop.GetValue(model) != null)
                 {
                     var associatedModel = prop.GetValue(model);
-                    var IdProp = associatedModel.GetType().GetProperty("Id"); //TODO: Handle missing Id prop
-                    var id = Convert.ToString(IdProp.GetValue(associatedModel));
+                    var idProp = associatedModel.GetType().GetProperty("Id"); //TODO: Handle missing Id prop
+                    var id = Convert.ToString(idProp.GetValue(associatedModel));
                     result = ReplaceAssociationWithId(result, prop.Name, id);
                 }
             }
