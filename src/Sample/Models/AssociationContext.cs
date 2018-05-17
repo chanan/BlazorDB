@@ -6,5 +6,7 @@ namespace Sample.Models
     {
         public StorageSet<Person> People { get; set; }
         public StorageSet<Address> Addresses { get; set; }
+        public StorageSet<State> States { get; set; }
+
     }
 }

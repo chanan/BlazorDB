@@ -8,35 +8,74 @@
 
 <BlazorButton Color="Color.Primary" onclick="@onAdd">Add a Person and Address</BlazorButton>
 
-@if (Context.People.Count == 1)
-{
-    <div>
-        @Context.People[0].FirstName
-    </div>
-    <div>
-        @Context.People[0].HomeAddress.Street
-    </div>
-}
 
 <BlazorButton Color="Color.Primary" onclick="@onChange">Change Address</BlazorButton>
 
+<h2>One to Many</h2>
+
+<BlazorButton Color="Color.Primary" onclick="@onAddMulti">Add a Person with multi Addresses</BlazorButton>
+
+<BlazorButton Color="Color.Primary" onclick="@onLoadPerson">Load Person</BlazorButton>
+
+<h2>Result</h2>
+
+@if (person != null)
+{
+    <div>
+        @person.FirstName
+    </div>
+    <div>Addresses:</div>
+    <ListGroup>
+        @foreach (var address in person.OtherAddresses)
+        {
+            <ListGroupItem>
+                <ListGroupItemHeading>@address.Id</ListGroupItemHeading>
+                <ListGroupItemText>
+                    @address.Street
+                </ListGroupItemText>
+            </ListGroupItem>
+        }
+    </ListGroup>
+}
+
 @functions {
-    void onAdd(UIMouseEventArgs e)
-    {
-        var person = new Person { FirstName = "John", LastName = "Smith" };
-        var address = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
-        person.HomeAddress = address;
-        Context.People.Add(person);
-        Context.Addresses.Add(address);
-        Context.SaveChanges();
+Person person;
+void onAdd(UIMouseEventArgs e)
+{
+    var person = new Person { FirstName = "John", LastName = "Smith" };
+    var address = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
+    person.HomeAddress = address;
+    Context.People.Add(person);
+    Context.Addresses.Add(address);
+    Context.SaveChanges();
+    StateHasChanged();
+}
+
+void onChange(UIMouseEventArgs e)
+{
+    Context.People[0].HomeAddress.Street = "Changed Streeet";
+    Context.SaveChanges();
+    Console.WriteLine("Person address changed: {0}", Context.People[0].HomeAddress.Street);
+    Console.WriteLine("Address entity changed as well: {0}", Context.Addresses[0].Street);
+    StateHasChanged();
+}
+
+void onAddMulti(UIMouseEventArgs e)
+{
+    var person = new Person { FirstName = "Many", LastName = "Test" };
+    var address1 = new Address { Street = "Many test 1", City = "Saved as a reference" };
+    var address2 = new Address { Street = "Many test 2", City = "Saved as a reference" };
+    person.OtherAddresses = new List<Address> { address1, address2 };
+    Context.People.Add(person);
+    Context.Addresses.Add(address1);
+    Context.Addresses.Add(address2);
+    Context.SaveChanges();
+    StateHasChanged();
+}
+
+void onLoadPerson(UIMouseEventArgs e)
+{
+    person = Context.People[0];
         StateHasChanged();
-    }
-    void onChange(UIMouseEventArgs e)
-    {
-        Context.People[0].HomeAddress.Street = "Changed Streeet";
-        Context.SaveChanges();
-        Console.WriteLine("Person address changed: {0}", Context.People[0].HomeAddress.Street);
-        Console.WriteLine("Address entity changed as well: {0}", Context.Addresses[0].Street);
-        StateHasChanged();
-    }
+}
 }

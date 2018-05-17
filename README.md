@@ -12,13 +12,13 @@ So far the the API is very simplestic but works.
 First add a reference to the nuget package:
 
 ```
-Install-Package BlazorDB -Version 0.0.4
+Install-Package BlazorDB -Version 0.0.5
 ```
 
 or
 
 ```
-dotnet add package BlazorDB --version 0.0.4
+dotnet add package BlazorDB --version 0.0.5
 ```
 
 Then in Program.cs add Blazor DB to the dependency injection services:
@@ -39,7 +39,7 @@ Set `LogDebug` to see debug output in the browser console.
 
 ### Setup
 
-*NOTE:* Models stored by BlazorDB require that an int Id property exist on the model. The Id property will be maintained by BlazorDB, you dont need to set it yourself.
+**NOTE:** Models stored by BlazorDB require that an int Id property exist on the model. The Id property will be maintained by BlazorDB, you dont need to set it yourself.
 
 Create at least one model and context for example:
 
@@ -109,8 +109,6 @@ void onclickGetPerson()
 
 ## Associations
 
-So far, only one to one associations work.
-
 Associations work in the same context. If you have an object in another object that is not in the context, it will be serialized to localStorage as one "complex" document.
 
 For example, in `Context.cs` only Person is in the Context and Address is not. Therefore, Person will contain Address, and Address will not be a seperate object.
@@ -132,7 +130,7 @@ public class AssociationContext : StorageContext
 
 `Person.cs` as shown above has a property `public Address HomeAddress { get; set; }`. Because unlike `Context.cs`, `AssociationContext.cs` does define `public StorageSet<Address> Addresses { get; set; }` references are stored as "foreign keys" instead of complex objects.
 
-Therefore, like in `Associations.cshtml` example, chaning the Address will Change the Person's HomeAddress:
+Therefore, like in `Associations.cshtml` example, changing the Address will Change the Person's HomeAddress:
 
 ```
 Context.People[0].HomeAddress.Street = "Changed Streeet";
@@ -141,7 +139,31 @@ Console.WriteLine("Person address changed: {0}", Context.People[0].HomeAddress.S
 Console.WriteLine("Address entity changed as well: {0}", Context.Addresses[0].Street);
 StateHasChanged();
 ```
+### One to Many, Many to Many Association
 
+Define a Many association by adding a property of type `List<>` to the association. For example in `Person.cs`:
+
+```
+public List<Address> OtherAddresses { get; set; }
+```
+
+This is association is then used in `Associations.cshtml` like so:
+
+```
+var person = new Person { FirstName = "Many", LastName = "Test" };
+var address1 = new Address { Street = "Many test 1", City = "Saved as a reference" };
+var address2 = new Address { Street = "Many test 2", City = "Saved as a reference" };
+person.OtherAddresses = new List<Address> { address1, address2 };
+Context.People.Add(person);
+Context.Addresses.Add(address1);
+Context.Addresses.Add(address2);
+Context.SaveChanges();
+StateHasChanged();
+```
+
+### Maintaining Associations
+
+Currently, associations are not maintained automatically. As in the example above, Person and Address need both be added to the context. In the future, BlazorDB may maintain those automatically. 
 
 ## Example
 

@@ -10,6 +10,8 @@ Contents:
 
 ### Associations
 
+**One Association**
+
 For objects that contain other object not in the same context, they will be serialized as one object, for example (`Context.cs`):
 
 ```
@@ -28,6 +30,13 @@ Person:
 
 ```
 
+**Many Association**
+
+Many associations are stored as an array of ids:
+
+```
+{"Id":1,"FirstName":"Many","LastName":"Test","HomeAddress":null,"OtherAddresses":[1,2]}
+```
 
 ## Metadata
 
