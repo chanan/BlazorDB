@@ -7,19 +7,10 @@ This library like Blazor itself is experimental and API is likely to change.
 ## Docs
 
 ### Install
-So far the the API is very simplestic but works.
 
 First add a reference to the nuget package:
 
-```
-Install-Package BlazorDB -Version 0.0.5
-```
-
-or
-
-```
-dotnet add package BlazorDB --version 0.0.5
-```
+[![NuGet Pre Release](https://img.shields.io/nuget/vpre/BlazorDB.svg)](https://www.nuget.org/packages/BlazorDB/)
 
 Then in Program.cs add Blazor DB to the dependency injection services:
 
