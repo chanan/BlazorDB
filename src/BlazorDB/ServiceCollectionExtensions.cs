@@ -1,9 +1,9 @@
-﻿using System;
+﻿using BlazorDB.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using BlazorDB.Storage;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BlazorDB
 {

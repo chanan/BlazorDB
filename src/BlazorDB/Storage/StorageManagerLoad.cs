@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Blazor;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Microsoft.AspNetCore.Blazor;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BlazorDB.Storage
 {
@@ -49,7 +49,7 @@ namespace BlazorDB.Storage
 
                     var storageSet = metadata != null
                         ? LoadStorageSet(storageSetType, contextType, modelType, stringModels[modelType])
-                        : CreateNewStorageSet(storageSetType);
+                        : CreateNewStorageSet(storageSetType, contextType);
                     prop.SetValue(context, storageSet);
                 }
 
@@ -109,10 +109,7 @@ namespace BlazorDB.Storage
         private static object LoadStorageSet(Type storageSetType, Type contextType, Type modelType,
             Dictionary<int, SerializedModel> map)
         {
-            var instance = CreateNewStorageSet(storageSetType);
-            var prop = storageSetType.GetProperty(StorageManagerUtil.StorageContextTypeName,
-                StorageManagerUtil.Flags);
-            prop.SetValue(instance, Util.GetFullyQualifiedTypeName(contextType));
+            var instance = CreateNewStorageSet(storageSetType, contextType);
             var listGenericType = StorageManagerUtil.GenericListType.MakeGenericType(modelType);
             var list = Activator.CreateInstance(listGenericType);
             foreach (var sm in map)
@@ -212,7 +209,6 @@ namespace BlazorDB.Storage
                 Console.WriteLine("modelType: {0}", modelType.Name);
                 foreach (var sm in map.Value)
                 {
-                    var stringModel = sm.Value;
                     Console.WriteLine("Key: {0}", sm.Key);
                     Console.WriteLine("sm: {0}", sm.Value.StringModel);
                     Console.WriteLine("Is Done: {0}", sm.Value.ScanDone);
@@ -379,9 +375,13 @@ namespace BlazorDB.Storage
             return result;
         }
 
-        private static object CreateNewStorageSet(Type storageSetType)
+        private static object CreateNewStorageSet(Type storageSetType, Type contextType)
         {
-            return Activator.CreateInstance(storageSetType);
+            var instance = Activator.CreateInstance(storageSetType);
+            var prop = storageSetType.GetProperty(StorageManagerUtil.StorageContextTypeName,
+                StorageManagerUtil.Flags);
+            prop.SetValue(instance, Util.GetFullyQualifiedTypeName(contextType));
+            return instance;
         }
 
         private static object SetList(object instance, object list)

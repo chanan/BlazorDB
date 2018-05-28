@@ -34,6 +34,7 @@ namespace BlazorDB.Storage
                 if (oldMetadata != null) DeleteOldModelsFromStorage(oldMetadata, storageTableName);
                 Logger.StorageSetSaved(modelType, guids.Count);
             }
+
             return total;
         }
 
@@ -56,16 +57,34 @@ namespace BlazorDB.Storage
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
             var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
+            var maxId = GetMaxId(enumerator);
             while (enumerator.MoveNext())
             {
                 var guid = Guid.NewGuid();
                 guids.Add(guid);
                 var model = enumerator.Current;
                 var name = $"{storageTableName}-{guid}";
+                if (GetId(model) == 0) SetId(model, ++maxId);
                 var serializedModel = ScanModelForAssociations(model, storageSets, JsonUtil.Serialize(model));
                 BlazorDBInterop.SetItem(name, serializedModel, false);
             }
+
             return guids;
+        }
+
+        //TODO: Move this to metadata
+        private static int GetMaxId(IEnumerator enumerator)
+        {
+            var max = 0;
+            while (enumerator.MoveNext())
+            {
+                var model = enumerator.Current;
+                var id = GetId(model);
+                if (id > max) max = id;
+            }
+
+            enumerator.Reset();
+            return max;
         }
 
         private static void DeleteOldModelsFromStorage(Metadata metadata, string storageTableName)
@@ -89,6 +108,7 @@ namespace BlazorDB.Storage
                 if (StorageManagerUtil.IsListInContext(storageSets, prop))
                     result = FixManyAssociation(model, prop, result);
             }
+
             return result;
         }
 
@@ -97,21 +117,19 @@ namespace BlazorDB.Storage
             var modelList = (IEnumerable) prop.GetValue(model);
             foreach (var item in modelList)
             {
-                var idProp = item.GetType().GetProperty(StorageManagerUtil.Id);
-                if (idProp == null) throw new ArgumentException("Model must have Id property");
+                var idProp = GetIdProperty(item);
                 var id = Convert.ToString(idProp.GetValue(item));
                 var serializedItem = JsonUtil.Serialize(item);
                 result = ReplaceModelWithId(result, serializedItem, id);
             }
+
             return result;
         }
 
         private static string FixOneAssocaition(object model, PropertyInfo prop, string result)
         {
             var associatedModel = prop.GetValue(model);
-            var idProp =
-                associatedModel.GetType().GetProperty(StorageManagerUtil.Id);
-            if (idProp == null) throw new ArgumentException("Model must have Id property");
+            var idProp = GetIdProperty(associatedModel);
             var id = Convert.ToString(idProp.GetValue(associatedModel));
             var serializedItem = JsonUtil.Serialize(model);
             result = ReplaceModelWithId(result, serializedItem, id);
@@ -121,6 +139,25 @@ namespace BlazorDB.Storage
         private static string ReplaceModelWithId(string result, string serializedItem, string id)
         {
             return result.Replace(serializedItem, id);
+        }
+
+        private static int GetId(object item)
+        {
+            var prop = GetIdProperty(item);
+            return (int) prop.GetValue(item);
+        }
+
+        private static void SetId(object item, int id)
+        {
+            var prop = GetIdProperty(item);
+            prop.SetValue(item, id);
+        }
+
+        private static PropertyInfo GetIdProperty(object item)
+        {
+            var prop = item.GetType().GetProperty(StorageManagerUtil.Id);
+            if (prop == null) throw new ArgumentException("Model must have an Id property");
+            return prop;
         }
     }
 }

@@ -1,15 +1,15 @@
-﻿using System;
+﻿using BlazorDB.Storage;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BlazorDB.Storage;
 
 namespace BlazorDB
 {
     public class StorageSet<TModel> : IList<TModel> where TModel : class
     {
         private string StorageContextTypeName { get; set; }
-        private IList<TModel> List { get; } = new List<TModel>();
+        private IList<TModel> List { get; set; } = new List<TModel>();
 
         public TModel this[int index]
         {
@@ -28,12 +28,11 @@ namespace BlazorDB
             {
                 var id = GetId(item);
                 if (id > 0) throw new ArgumentException("Can't add item to set that already has an Id", "Id");
-                id = SetId(item);
-                Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), id, item);
+                Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), item);
             }
             else
             {
-                Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), item);
+                throw new ArgumentException("Model must have Id property");
             }
 
             List.Add(item);

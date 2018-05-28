@@ -1,15 +1,16 @@
-﻿@page "/"
+﻿@using Sample.Models
+@page "/"
 @inject Context Context
 
 <h1>BlazorDB Demo Site</h1>
 
-<button onclick="@onclickAddPerson">Add Person</button>
+<button onclick="@OnclickAddPerson">Add Person</button>
 
 <button onclick="@onclickRemovePerson">Remove Person</button>
 
-<button onclick="@onclickGetPerson">Get Person</button>
+<button onclick="@OnclickGetPerson">Get Person</button>
 
-<button onclick="@onclickSaveChanges">SaveChanges</button>
+<button onclick="@OnclickSaveChanges">SaveChanges</button>
 
 
 @if (@Person != null)
@@ -21,7 +22,7 @@
 
 @functions {
     private Person Person { get; set; }
-    void onclickAddPerson()
+    void OnclickAddPerson()
     {
         //In this case, address gets serailized as part of the object because Address is not in the Context
         var person = new Person { FirstName = "John", LastName = "Smith", HomeAddress = new Address { Street = "221 Baker Street", City = "This should be part of the json, since address is not in context (Very long city)" } };
@@ -37,7 +38,7 @@
         Context.People.Remove(personToRemove);
     }
 
-    void onclickGetPerson()
+    void OnclickGetPerson()
     {
         var query = from person in Context.People
                     where person.Id == 1
@@ -46,7 +47,7 @@
         StateHasChanged();
     }
 
-    void onclickSaveChanges()
+    void OnclickSaveChanges()
     {
         Context.SaveChanges();
     }

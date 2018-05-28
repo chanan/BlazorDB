@@ -37,16 +37,6 @@ namespace BlazorDB.Storage
             BlazorLogger.Logger.GroupEnd();
         }
 
-        internal static void ItemAddedToContext(string contextTypeName, Type modelType, int id, object item)
-        {
-            if (!LogDebug) return;
-            BlazorLogger.Logger.GroupCollapsed(
-                $"Item  %c{modelType.Namespace}.{modelType.Name}%c %cadded%c to context: %c{contextTypeName}%c with id: {id}",
-                Blue, Normal, Green, Normal, Blue, Normal);
-            BlazorLogger.Logger.Log("Item: %o", item);
-            BlazorLogger.Logger.GroupEnd();
-        }
-
         internal static void ItemAddedToContext(string contextTypeName, Type modelType, object item)
         {
             if (!LogDebug) return;
