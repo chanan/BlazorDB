@@ -5,8 +5,8 @@ namespace BlazorDB.Storage
 {
     internal class StorageManager : IStorageManager
     {
-        private StorageManagerSave _storageManagerSave = new StorageManagerSave();
-        private StorageManagerLoad _storageManagerLoad = new StorageManagerLoad();
+        private readonly StorageManagerLoad _storageManagerLoad = new StorageManagerLoad();
+        private readonly StorageManagerSave _storageManagerSave = new StorageManagerSave();
 
         public int SaveContextToLocalStorage(StorageContext context)
         {

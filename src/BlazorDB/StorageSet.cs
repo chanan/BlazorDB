@@ -1,15 +1,21 @@
-﻿using BlazorDB.Storage;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using BlazorDB.Storage;
 
 namespace BlazorDB
 {
     public class StorageSet<TModel> : IList<TModel> where TModel : class
     {
-        private string StorageContextTypeName { get; set; } 
-        private IList<TModel> List { get; set; } = new List<TModel>();
-        public TModel this[int index] { get => List[index]; set => List[index] = value; }
+        private string StorageContextTypeName { get; set; }
+        private IList<TModel> List { get; } = new List<TModel>();
+
+        public TModel this[int index]
+        {
+            get => List[index];
+            set => List[index] = value;
+        }
 
         public int Count => List.Count;
 
@@ -17,7 +23,8 @@ namespace BlazorDB
 
         public void Add(TModel item)
         {
-            if(HasId(item))
+            if (item == null) throw new ArgumentException("Can't add null");
+            if (HasId(item))
             {
                 var id = GetId(item);
                 if (id > 0) throw new ArgumentException("Can't add item to set that already has an Id", "Id");
@@ -28,34 +35,8 @@ namespace BlazorDB
             {
                 Logger.ItemAddedToContext(StorageContextTypeName, item.GetType(), item);
             }
+
             List.Add(item);
-        }
-
-        //TODO: Consider using an "Id table"
-        private int SetId(TModel item)
-        {
-            var prop = item.GetType().GetProperty("Id");
-            int max = 0;
-            foreach (var i in List)
-            {
-                int currentId = (int)prop.GetValue(i);
-                if (currentId > max) max = currentId;
-            }
-            int id = max + 1;
-            prop.SetValue(item, id);
-            return id;
-        }
-
-        private int GetId(TModel item)
-        {
-            var prop = item.GetType().GetProperty("Id");
-            return (int)prop.GetValue(item);
-        }
-
-        private bool HasId(TModel item)
-        {
-            var prop = item.GetType().GetProperty("Id");
-            return prop != null;
         }
 
         public void Clear()
@@ -90,6 +71,7 @@ namespace BlazorDB
 
         public bool Remove(TModel item)
         {
+            if (item == null) throw new ArgumentException("Can't remove null");
             var removed = List.Remove(item);
             if (removed) Logger.ItemRemovedFromContext(StorageContextTypeName, item.GetType());
             return removed;
@@ -103,6 +85,31 @@ namespace BlazorDB
         IEnumerator IEnumerable.GetEnumerator()
         {
             return List.GetEnumerator();
+        }
+
+        //TODO: Consider using an "Id table"
+        private int SetId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            if (prop == null) throw new ArgumentException("Model must have an Id property");
+            var max = List.Select(i => (int) prop.GetValue(i)).Concat(new[] {0}).Max();
+
+            var id = max + 1;
+            prop.SetValue(item, id);
+            return id;
+        }
+
+        private static int GetId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            if (prop == null) throw new ArgumentException("Model must have an Id property");
+            return (int) prop.GetValue(item);
+        }
+
+        private static bool HasId(TModel item)
+        {
+            var prop = item.GetType().GetProperty("Id");
+            return prop != null;
         }
     }
 }
