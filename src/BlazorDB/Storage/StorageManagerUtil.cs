@@ -34,19 +34,19 @@ namespace BlazorDB.Storage
             return value != null ? JsonUtil.Deserialize<Metadata>(value) : null;
         }
 
+        internal static string ReplaceString(string source, int start, int end, string stringToInsert)
+        {
+            var startStr = source.Substring(0, start);
+            var endStr = source.Substring(end);
+            return startStr + stringToInsert + endStr;
+        }
+
         internal static bool IsInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
         {
             var query = from p in storageSets
                 where p.PropertyType.GetGenericArguments()[0] == prop.PropertyType
                 select p;
             return query.SingleOrDefault() != null;
-        }
-
-        internal static string ReplaceString(string source, int start, int end, string stringToInsert)
-        {
-            var startStr = source.Substring(0, start);
-            var endStr = source.Substring(end);
-            return startStr + stringToInsert + endStr;
         }
 
         internal static bool IsListInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
