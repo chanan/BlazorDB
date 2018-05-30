@@ -26,6 +26,9 @@
     {
         //In this case, address gets serailized as part of the object because Address is not in the Context
         var person = new Person { FirstName = "John", LastName = "Smith", HomeAddress = new Address { Street = "221 Baker Street", City = "This should be part of the json, since address is not in context (Very long city)" } };
+        var address1 = new Address { Street = "Many test 1", City = "Saved as a reference" };
+        var address2 = new Address { Street = "Many test 2", City = "Saved as a reference" };
+        person.OtherAddresses = new List<Address> { address1, address2 };
         Context.People.Add(person);
     }
 

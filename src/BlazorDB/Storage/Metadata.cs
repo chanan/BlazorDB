@@ -8,5 +8,6 @@ namespace BlazorDB.Storage
         public List<Guid> Guids { get; set; }
         public string ModelName { get; set; }
         public string ContextName { get; set; }
+        public int MaxId { get; set; }
     }
 }
