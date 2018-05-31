@@ -132,7 +132,13 @@ StateHasChanged();
 ```
 ### One to Many, Many to Many Association
 
-Define a Many association by adding a property of type `List<>` to the association. For example in `Person.cs`:
+Define a "One" association by adding a property of the other model. For example in `Person.cs`:
+
+```
+public Address HomeAddress { get; set; }
+```
+
+Define a "Many" association by adding a property of type `List<>` to the association. For example in `Person.cs`:
 
 ```
 public List<Address> OtherAddresses { get; set; }
@@ -142,19 +148,20 @@ This is association is then used in `Associations.cshtml` like so:
 
 ```
 var person = new Person { FirstName = "Many", LastName = "Test" };
+person.HomeAddress = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
 var address1 = new Address { Street = "Many test 1", City = "Saved as a reference" };
 var address2 = new Address { Street = "Many test 2", City = "Saved as a reference" };
 person.OtherAddresses = new List<Address> { address1, address2 };
 Context.People.Add(person);
-Context.Addresses.Add(address1);
-Context.Addresses.Add(address2);
 Context.SaveChanges();
 StateHasChanged();
 ```
 
 ### Maintaining Associations
 
-Currently, associations are not maintained automatically. As in the example above, Person and Address need both be added to the context. In the future, BlazorDB may maintain those automatically. 
+As you can see in the example above BlazorDB will detect associations added to the model so no need to add them to the Context explicitly. In the example above, the address objects do not need to be explicitly added to the context, instead they are persisted when the person object is added and `SaveChanges()` is called.
+
+**Note:** At this time removing/deleting is not done automatically and needs to be done manually. A future update of BlazorDB will handle deletions properly.  
 
 ## Example
 

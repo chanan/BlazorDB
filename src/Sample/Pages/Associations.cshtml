@@ -47,7 +47,6 @@
         var address = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
         person.HomeAddress = address;
         Context.People.Add(person);
-        //Context.Addresses.Add(address); // Shouldn't need this line
         Context.SaveChanges();
         StateHasChanged();
     }
@@ -68,15 +67,13 @@
         var address2 = new Address { Street = "Many test 2", City = "Saved as a reference" };
         person.OtherAddresses = new List<Address> { address1, address2 };
         Context.People.Add(person);
-        Context.Addresses.Add(address1);
-        Context.Addresses.Add(address2);
         Context.SaveChanges();
         StateHasChanged();
     }
 
     void OnLoadPerson(UIMouseEventArgs e)
     {
-        _person = Context.People[0];
-            StateHasChanged();
+        _person = Context.People[1];
+        StateHasChanged();
     }
 }

@@ -45,6 +45,7 @@ Many associations are stored as an array of ids:
 Contents:
 
 * Guids - List of persisted guids
+* MaxId - The last id of the StorageSet
 
 Initial implementation will regenerate the guid on every `SaveChanges()` and the list in the metadata table. Future implementation might store metadata about the model in the model value itself, so the guid will be loaded into memory and won't be regenerated.  
 
