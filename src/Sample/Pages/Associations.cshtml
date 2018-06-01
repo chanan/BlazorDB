@@ -18,6 +18,10 @@
 
 <BlazorButton Color="Color.Primary" onclick="@OnLoadPerson">Load Person</BlazorButton>
 
+<h2>Delete Test (Should throw exception)</h2>
+
+<BlazorButton Color="Color.Primary" onclick="@OnDelete">Add a Person with Addresses then delete Address</BlazorButton>
+
 <h2>Result</h2>
 
 @if (_person != null)
@@ -75,5 +79,17 @@
     {
         _person = Context.People[1];
         StateHasChanged();
+    }
+
+    void OnDelete(UIMouseEventArgs e)
+    {
+        var person = new Person { FirstName = "John", LastName = "Smith" };
+        var address = new Address { Street = "221 Baker Streeet", City = "This should be a refrence to address since Address exists in the context" };
+        person.HomeAddress = address;
+        Context.People.Add(person);
+        Context.SaveChanges();
+
+        Context.Addresses.RemoveAt(0);
+        Context.SaveChanges();
     }
 }

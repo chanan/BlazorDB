@@ -85,19 +85,7 @@ namespace BlazorDB
         {
             return List.GetEnumerator();
         }
-
-        //TODO: Consider using an "Id table"
-        private int SetId(TModel item)
-        {
-            var prop = item.GetType().GetProperty("Id");
-            if (prop == null) throw new ArgumentException("Model must have an Id property");
-            var max = List.Select(i => (int) prop.GetValue(i)).Concat(new[] {0}).Max();
-
-            var id = max + 1;
-            prop.SetValue(item, id);
-            return id;
-        }
-
+ 
         private static int GetId(TModel item)
         {
             var prop = item.GetType().GetProperty("Id");

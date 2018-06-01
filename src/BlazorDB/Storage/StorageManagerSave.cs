@@ -21,7 +21,8 @@ namespace BlazorDB.Storage
             return total;
         }
 
-        private static IReadOnlyDictionary<string, Metadata> LoadMetadataList(StorageContext context, IEnumerable<PropertyInfo> storageSets, Type contextType)
+        private static IReadOnlyDictionary<string, Metadata> LoadMetadataList(StorageContext context,
+            IEnumerable<PropertyInfo> storageSets, Type contextType)
         {
             var map = new Dictionary<string, Metadata>();
             foreach (var prop in storageSets)
@@ -48,7 +49,7 @@ namespace BlazorDB.Storage
                 var storageSetValue = prop.GetValue(context);
                 var modelType = prop.PropertyType.GetGenericArguments()[0];
                 var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                
+
                 EnsureAllModelsHaveIds(storageSetValue, modelType, metadataMap);
                 EnsureAllAssociationsHaveIds(context, storageSetValue, modelType, storageSets, metadataMap);
 
@@ -63,36 +64,43 @@ namespace BlazorDB.Storage
             return total;
         }
 
-        private static void EnsureAllAssociationsHaveIds(StorageContext context, object storageSetValue, Type modelType, List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
+        private static void EnsureAllAssociationsHaveIds(StorageContext context, object storageSetValue, Type modelType,
+            List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
+            var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
                 foreach (var prop in model.GetType().GetProperties())
                 {
-                    if (prop.GetValue(model) == null || (!StorageManagerUtil.IsInContext(storageSets, prop) &&
-                                                         !StorageManagerUtil.IsListInContext(storageSets, prop))) continue;
-                    if (StorageManagerUtil.IsInContext(storageSets, prop)) EnsureOneAssociationHasId(context, prop.GetValue(model), prop.PropertyType, storageSets, metadataMap);
-                    if (StorageManagerUtil.IsListInContext(storageSets, prop)) EnsureManyAssociationHasId(context, prop.GetValue(model), prop, storageSets, metadataMap);
+                    if (prop.GetValue(model) == null || !StorageManagerUtil.IsInContext(storageSets, prop) &&
+                        !StorageManagerUtil.IsListInContext(storageSets, prop)) continue;
+                    if (StorageManagerUtil.IsInContext(storageSets, prop))
+                        EnsureOneAssociationHasId(context, prop.GetValue(model), prop.PropertyType, storageSets,
+                            metadataMap);
+                    if (StorageManagerUtil.IsListInContext(storageSets, prop))
+                        EnsureManyAssociationHasId(context, prop.GetValue(model), prop, storageSets, metadataMap);
                 }
             }
         }
 
-        private static void EnsureManyAssociationHasId(StorageContext context, object listObject, PropertyInfo prop, List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
+        private static void EnsureManyAssociationHasId(StorageContext context, object listObject, PropertyInfo prop,
+            List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var method = listObject.GetType().GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator)method.Invoke(listObject, new object[] { });
+            var enumerator = (IEnumerator) method.Invoke(listObject, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
-                EnsureOneAssociationHasId(context, model, prop.PropertyType.GetGenericArguments()[0], storageSets, metadataMap);
+                EnsureOneAssociationHasId(context, model, prop.PropertyType.GetGenericArguments()[0], storageSets,
+                    metadataMap);
             }
         }
 
-        private static void EnsureOneAssociationHasId(StorageContext context, object associatedModel, Type propType, List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
+        private static void EnsureOneAssociationHasId(StorageContext context, object associatedModel, Type propType,
+            List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var idProp = GetIdProperty(associatedModel);
             var id = Convert.ToString(idProp.GetValue(associatedModel));
@@ -102,26 +110,56 @@ namespace BlazorDB.Storage
                 metadata.MaxId = metadata.MaxId + 1;
                 SaveAssociationModel(context, associatedModel, propType, storageSets, metadata.MaxId);
             }
+            else
+            {
+                EnsureAssociationModelExistsOrThrow(context, Convert.ToInt32(id), storageSets, propType);
+            }
         }
 
-        private static void EnsureAllModelsHaveIds(object storageSetValue, Type modelType, IReadOnlyDictionary<string, Metadata> metadataMap)
+        private static void EnsureAssociationModelExistsOrThrow(StorageContext context, int id,
+            IEnumerable<PropertyInfo> storageSets, Type propType)
+        {
+            var q = from p in storageSets
+                where p.PropertyType.GetGenericArguments()[0] == propType
+                select p;
+            var storeageSetProp = q.Single();
+            var storeageSet = storeageSetProp.GetValue(context);
+            var listProp = storeageSet.GetType().GetProperty(StorageManagerUtil.List, StorageManagerUtil.Flags);
+            var list = listProp.GetValue(storeageSet);
+            var method = list.GetType().GetMethod(StorageManagerUtil.GetEnumerator);
+            var enumerator = (IEnumerator) method.Invoke(list, new object[] { });
+            var found = false;
+            while (enumerator.MoveNext())
+            {
+                var model = enumerator.Current;
+                if (id != GetId(model)) continue;
+                found = true;
+                break;
+            }
+
+            if (!found)
+                throw new InvalidOperationException(
+                    $"A model of type: {propType.Name} with Id {id} was deleted but still being used by an association. Remove it from the association as well.");
+        }
+
+        private static void EnsureAllModelsHaveIds(object storageSetValue, Type modelType,
+            IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
             var metadata = metadataMap[Util.GetFullyQualifiedTypeName(modelType)];
-            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
+            var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
-                if (GetId(model) == 0)
-                {
-                    metadata.MaxId = metadata.MaxId + 1;
-                    SetId(model, metadata.MaxId);
-                }
+                if (GetId(model) != 0) continue;
+                metadata.MaxId = metadata.MaxId + 1;
+                SetId(model, metadata.MaxId);
             }
         }
 
-        private static void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType, Metadata oldMetadata)
+        private static void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType,
+            Metadata oldMetadata)
         {
             var metadata = new Metadata
             {
@@ -169,8 +207,8 @@ namespace BlazorDB.Storage
             var result = serializedModel;
             foreach (var prop in model.GetType().GetProperties())
             {
-                if (prop.GetValue(model) == null || (!StorageManagerUtil.IsInContext(storageSets, prop) &&
-                                                     !StorageManagerUtil.IsListInContext(storageSets, prop))) continue;
+                if (prop.GetValue(model) == null || !StorageManagerUtil.IsInContext(storageSets, prop) &&
+                    !StorageManagerUtil.IsListInContext(storageSets, prop)) continue;
                 if (StorageManagerUtil.IsInContext(storageSets, prop)) result = FixOneAssociation(model, prop, result);
                 if (StorageManagerUtil.IsListInContext(storageSets, prop))
                     result = FixManyAssociation(model, prop, result);
@@ -203,18 +241,19 @@ namespace BlazorDB.Storage
             return result;
         }
 
-        private static int SaveAssociationModel(StorageContext context, object associatedModel, Type propType, IEnumerable<PropertyInfo> storageSets, int id)
+        private static int SaveAssociationModel(StorageContext context, object associatedModel, Type propType,
+            IEnumerable<PropertyInfo> storageSets, int id)
         {
             var q = from p in storageSets
                 where p.PropertyType.GetGenericArguments()[0] == propType
-                    select p;
+                select p;
             var storeageSetProp = q.Single();
             var storeageSet = storeageSetProp.GetValue(context);
             var listProp = storeageSet.GetType().GetProperty(StorageManagerUtil.List, StorageManagerUtil.Flags);
             var list = listProp.GetValue(storeageSet);
             var addMethod = list.GetType().GetMethod(StorageManagerUtil.Add);
             SetId(associatedModel, id);
-            addMethod.Invoke(list, new[] { associatedModel });
+            addMethod.Invoke(list, new[] {associatedModel});
             return id;
         }
 
