@@ -9,11 +9,25 @@
 
 <h1>Movie Reviews</h1>
 
-<button onclick="@OnLoadMovies">Load Movies</button>
+<h2>Notes</h2>
+
+<ul>
+    <li>You can click "Insert Seed Data" to insert some data into the database, or:</li>
+    <li>Add one or more movie in the form below</li>
+    <li>For a movie you can click "Load Reviews"</li>
+    <li>You can add one or more reviews to a movie</li>
+    <li>You can refresh the page, and click "Load Movies" again to retreive your saved data</li>
+    <li>View the store Folder to see the Fluxor code that controls the BlazorDB code</li>
+    <li>If you have Redux chrome devtools installed, you may view the state in the devtools console.</li>
+</ul>
+
+<h2>Movies</h2>
+
+<button class="btn btn-info" onclick="@OnLoadMovies">Load Movies</button><button class="btn btn-info" onclick="@OnInsertSeedData">Insert Seed Data</button>
 
 @if (State.Current.Movies.Count > 0)
 {
-    <table>
+    <table class="table table-bordered">
         <thead>
             <tr>
                 <th>Id</th>
@@ -28,62 +42,60 @@
                 <tr>
                     <td>@movie.Id</td>
                     <td>@movie.Name</td>
-                    <td><button onclick="@(e => OnReviewClick(movie.Id))">Load Reviews</button></td>
-                    <td><Button onclick="@(e => OnDeleteMovie(movie.Id))">Delete</Button></td>
+                    <td><button class="btn btn-outline-primary" onclick="@(e => OnReviewClick(movie.Id))">Load Reviews</button></td>
+                    <td><Button class="btn btn-outline-danger" onclick="@(e => OnDeleteMovie(movie.Id))">Delete</Button></td>
                 </tr>
             }
         </tbody>
     </table>
 }
 
-<h2>Add New Movie</h2>
+<h3>Add New Movie</h3>
 <form>
-    <label for="movieName">Name:</label> <input id="movieName" type="text" bind="@_newMovieName" />
-    <div>
-        <input type="submit" value="Add Movie" onclick="@OnAddMovie" />
+    <div class="form-group">
+        <label for="movieName">Name:</label> <input id="movieName" class="form-control" type="text" bind="@_newMovieName" />
     </div>
+    <input type="submit" class="btn btn-primary" value="Add Movie" onclick="@OnAddMovie" />
 </form>
-
-<h2>Reviews</h2>
 
 @if (ReviewState.Current.MovieId != 0)
 {
-    @if (ReviewState.Current.Reviews != null)
-     {
-         <table>
-             <thead>
-             <tr>
-                 <th>Id</th>
-                 <th>Stars</th>
-                 <th>Comment</th>
-                 <th>Delete</th>
-             </tr>
-             </thead>
-             <tbody>
-             @foreach (var review in ReviewState.Current.Reviews)
-             {
-                 <tr>
-                     <td>@review.Id</td>
-                     <td>@review.Stars</td>
-                     <td>@review.Comment</td>
-                     <td><Button onclick="@(e => OnDeleteReview(ReviewState.Current.MovieId, review.Id))">Delete</Button></td>
-                 </tr>
-             }
-             </tbody>
-         </table>
-     }
+    <h2>Reviews</h2>
 
-    <h2>Add New Review</h2>
+    @if (ReviewState.Current.Reviews != null)
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Stars</th>
+                    <th>Comment</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var review in ReviewState.Current.Reviews)
+                {
+                    <tr>
+                        <td>@review.Id</td>
+                        <td>@review.Stars</td>
+                        <td>@review.Comment</td>
+                        <td><Button class="btn btn-outline-danger" onclick="@(e => OnDeleteReview(ReviewState.Current.MovieId, review.Id))">Delete</Button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h3>Add New Review</h3>
     <form>
-        <div>
-            <label for="stars">Stars:</label> <input id="stars" type="number" bind="@_newStars" />
+        <div class="form-group">
+            <label for="stars">Stars:</label> <input id="stars" class="form-control" type="number" bind="@_newStars" />
         </div>
-        <div>
-            <label for="comment">Comment:</label> <input id="comment" type="text" bind="@_newComment" />
+        <div class="form-group">
+            <label for="comment">Comment:</label> <input id="comment" class="form-control" type="text" bind="@_newComment" />
         </div>
-        <div>
-            <input type="submit" value="Add Review" onclick="@(e => OnAddReview(ReviewState.Current.MovieId))"/>
-        </div>
+        <input type="submit" class="btn btn-primary" value="Add Review" onclick="@(e => OnAddReview(ReviewState.Current.MovieId))" />
     </form>
 }
 
@@ -128,6 +140,12 @@
     async void OnDeleteMovie(int movieId)
     {
         await Dispatcher.DispatchAsync(new DeleteMovieAction(movieId));
+        StateHasChanged();
+    }
+
+    async void OnInsertSeedData()
+    {
+        await Dispatcher.DispatchAsync(new InsertSeedMoviesAction());
         StateHasChanged();
     }
 }
