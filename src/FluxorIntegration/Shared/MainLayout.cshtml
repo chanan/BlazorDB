@@ -1,0 +1,15 @@
+@inherits Microsoft.AspNetCore.Blazor.Layouts.BlazorLayoutComponent
+@using Blazor.Fluxor
+@inject IStore Store
+
+@Store.Initialize()
+
+<div class="sidebar">
+    <NavMenu />
+</div>
+
+<div class="main">
+    <div class="content px-4">
+        @Body
+    </div>
+</div>

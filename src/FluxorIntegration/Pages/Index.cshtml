@@ -1,0 +1,133 @@
+﻿@using Blazor.Fluxor
+@using FluxorIntegration.Store.Movies
+@using FluxorIntegration.Store.Reviews
+@page "/"
+
+@inject IState<MovieState> State
+@inject IState<ReviewsState> ReviewState
+@inject IDispatcher Dispatcher
+
+<h1>Movie Reviews</h1>
+
+<button onclick="@OnLoadMovies">Load Movies</button>
+
+@if (State.Current.Movies.Count > 0)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Reviews</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var movie in State.Current.Movies)
+            {
+                <tr>
+                    <td>@movie.Id</td>
+                    <td>@movie.Name</td>
+                    <td><button onclick="@(e => OnReviewClick(movie.Id))">Load Reviews</button></td>
+                    <td><Button onclick="@(e => OnDeleteMovie(movie.Id))">Delete</Button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Add New Movie</h2>
+<form>
+    <label for="movieName">Name:</label> <input id="movieName" type="text" bind="@_newMovieName" />
+    <div>
+        <input type="submit" value="Add Movie" onclick="@OnAddMovie" />
+    </div>
+</form>
+
+<h2>Reviews</h2>
+
+@if (ReviewState.Current.MovieId != 0)
+{
+    @if (ReviewState.Current.Reviews != null)
+     {
+         <table>
+             <thead>
+             <tr>
+                 <th>Id</th>
+                 <th>Stars</th>
+                 <th>Comment</th>
+                 <th>Delete</th>
+             </tr>
+             </thead>
+             <tbody>
+             @foreach (var review in ReviewState.Current.Reviews)
+             {
+                 <tr>
+                     <td>@review.Id</td>
+                     <td>@review.Stars</td>
+                     <td>@review.Comment</td>
+                     <td><Button onclick="@(e => OnDeleteReview(ReviewState.Current.MovieId, review.Id))">Delete</Button></td>
+                 </tr>
+             }
+             </tbody>
+         </table>
+     }
+
+    <h2>Add New Review</h2>
+    <form>
+        <div>
+            <label for="stars">Stars:</label> <input id="stars" type="number" bind="@_newStars" />
+        </div>
+        <div>
+            <label for="comment">Comment:</label> <input id="comment" type="text" bind="@_newComment" />
+        </div>
+        <div>
+            <input type="submit" value="Add Review" onclick="@(e => OnAddReview(ReviewState.Current.MovieId))"/>
+        </div>
+    </form>
+}
+
+@functions {
+    string _newMovieName;
+    int _newStars;
+    string _newComment;
+
+    async void OnAddMovie()
+    {
+        await Dispatcher.DispatchAsync(new AddMovieAction(_newMovieName));
+        _newMovieName = "";
+        StateHasChanged();
+    }
+
+    async void OnLoadMovies()
+    {
+        await Dispatcher.DispatchAsync(new LoadMoviesAction());
+        StateHasChanged();
+    }
+
+    async void OnReviewClick(int movieId)
+    {
+        await Dispatcher.DispatchAsync(new LoadReviewsAction(movieId));
+        StateHasChanged();
+    }
+
+    async void OnAddReview(int movieId)
+    {
+        await Dispatcher.DispatchAsync(new AddReviewAction(movieId, _newStars, _newComment));
+        _newStars = 0;
+        _newComment = "";
+        StateHasChanged();
+    }
+
+    async void OnDeleteReview(int movieId, int reviewId)
+    {
+        await Dispatcher.DispatchAsync(new DeleteReviewAction(movieId, reviewId));
+        StateHasChanged();
+    }
+
+    async void OnDeleteMovie(int movieId)
+    {
+        await Dispatcher.DispatchAsync(new DeleteMovieAction(movieId));
+        StateHasChanged();
+    }
+}
