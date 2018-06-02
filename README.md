@@ -170,6 +170,10 @@ A Todo sample built with BlazorDB is included in the sample project:
 * [Todos.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.cshtml)
 * [TodoItemForm.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.cshtml)
 
+## Fluxor Integration Example
+
+The [Fluxor integration example](https://github.com/chanan/BlazorDB/tree/master/src/FluxorIntegration) shows how to use BlazorDB to manage data and Fluxor to connect between the UI and the data layer.
+
 ## Storage Format
 
 [Storage Format Doc](https://github.com/chanan/BlazorDB/blob/master/docs/storageFormat.md)
