@@ -3,5 +3,6 @@
     public interface IStorageContext
     {
         int SaveChanges();
+        void LogToConsole();
     }
 }

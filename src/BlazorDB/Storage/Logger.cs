@@ -10,10 +10,17 @@ namespace BlazorDB.Storage
         private const string Normal = "color: black; font-style: normal;";
         internal static bool LogDebug { get; set; } = true;
 
-        internal static void StartContextType(Type contextType)
+        internal static void LogStorageSetToConsole(Type type, object list)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.GroupCollapsed($"Context loaded: %c{contextType.Namespace}.{contextType.Name}", Blue);
+            BlazorLogger.Logger.Log($"StorageSet<{type.GetGenericArguments()[0].Name}>: %o", list);
+        }
+
+        internal static void StartContextType(Type contextType, bool loading = true)
+        {
+            if (!LogDebug) return;
+            var message = loading ? " loading" : " log";
+            BlazorLogger.Logger.GroupCollapsed($"Context{message}: %c{contextType.Namespace}.{contextType.Name}", Blue);
         }
 
         internal static void ContextSaved(Type contextType)

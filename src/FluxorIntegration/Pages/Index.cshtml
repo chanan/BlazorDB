@@ -23,7 +23,9 @@
 
 <h2>Movies</h2>
 
-<button class="btn btn-info" onclick="@OnLoadMovies">Load Movies</button><button class="btn btn-info" onclick="@OnInsertSeedData">Insert Seed Data</button>
+<button class="btn btn-info" onclick="@OnLoadMovies">Load Movies</button>
+<button class="btn btn-info" onclick="@OnInsertSeedData">Insert Seed Data</button>
+<button class="btn btn-info" onclick="@OnDebug">Print to Console</button>
 
 @if (State.Current.Movies.Count > 0)
 {
@@ -147,5 +149,10 @@
     {
         await Dispatcher.DispatchAsync(new InsertSeedMoviesAction());
         StateHasChanged();
+    }
+
+    async void OnDebug()
+    {
+        await Dispatcher.DispatchAsync(new LogContextAction());
     }
 }

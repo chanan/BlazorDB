@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace BlazorDB
 {
@@ -10,6 +9,11 @@ namespace BlazorDB
     {
         private string StorageContextTypeName { get; set; }
         private IList<TModel> List { get; set; } = new List<TModel>();
+
+        public void LogToConsole()
+        {
+            Logger.LogStorageSetToConsole(GetType(), List);
+        }
 
         public TModel this[int index]
         {
