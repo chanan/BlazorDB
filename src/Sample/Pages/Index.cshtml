@@ -12,6 +12,11 @@
 
 <button onclick="@OnclickSaveChanges">SaveChanges</button>
 
+<h2>Validations</h2>
+
+<button onclick="@OnRequired">Required</button>
+
+<button onclick="@OnMaxLength">Max Length</button>
 
 @if (@Person != null)
 {
@@ -52,6 +57,20 @@
 
     void OnclickSaveChanges()
     {
+        Context.SaveChanges();
+    }
+
+    void OnRequired()
+    {
+        var person = new Person {LastName = "Firstname required!"};
+        Context.People.Add(person);
+        Context.SaveChanges();
+    }
+
+    void OnMaxLength()
+    {
+        var person = new Person { FirstName = "Lastname is long", LastName = "This is a very long last name and should throw!" };
+        Context.People.Add(person);
         Context.SaveChanges();
     }
 }

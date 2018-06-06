@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using BlazorDB.DataAnnotations;
 using Microsoft.AspNetCore.Blazor;
 
 namespace BlazorDB.Storage
@@ -15,10 +16,71 @@ namespace BlazorDB.Storage
             var contextType = context.GetType();
             Logger.ContextSaved(contextType);
             var storageSets = StorageManagerUtil.GetStorageSets(contextType);
-            var metadataMap = LoadMetadataList(context, storageSets, contextType);
-            total = SaveStorageSets(context, total, contextType, storageSets, metadataMap);
-            Logger.EndGroup();
+            var error = ValidateModels(context, storageSets);
+            if (error == null)
+            {
+                var metadataMap = LoadMetadataList(context, storageSets, contextType);
+                total = SaveStorageSets(context, total, contextType, storageSets, metadataMap);
+                Logger.EndGroup();
+            }
+            else
+            {
+                BlazorLogger.Logger.Error("SaveChanges() terminated due to validation error");
+                Logger.EndGroup();
+                throw new BlazorDBUpdateException(error);
+            }
+            
             return total;
+        }
+
+        private string ValidateModels(StorageContext context, IEnumerable<PropertyInfo> storageSets)
+        {
+            string error = null;
+            foreach (var storeageSetProp in storageSets)
+            {
+                var storeageSet = storeageSetProp.GetValue(context);
+                var listProp = storeageSet.GetType().GetProperty(StorageManagerUtil.List, StorageManagerUtil.Flags);
+                var list = listProp.GetValue(storeageSet);
+                var method = list.GetType().GetMethod(StorageManagerUtil.GetEnumerator);
+                var enumerator = (IEnumerator)method.Invoke(list, new object[] { });
+                while (enumerator.MoveNext())
+                {
+                    var model = enumerator.Current;
+                    foreach (var prop in model.GetType().GetProperties())
+                    {
+                        if (Attribute.IsDefined(prop, typeof(Required)))
+                        {
+                            var value = prop.GetValue(model);
+                            if (value == null)
+                            {
+                                error =
+                                    $"{model.GetType().FullName}.{prop.Name} is a required field. SaveChanges() has been terminated.";
+                                break;
+                            }
+                        }
+
+                        if (Attribute.IsDefined(prop, typeof(MaxLength)))
+                        {
+                            var maxLength = (MaxLength) Attribute.GetCustomAttribute(prop, typeof(MaxLength));
+                            var value = prop.GetValue(model);
+                            if (value != null)
+                            {
+                                var str = value.ToString();
+                                if (str.Length > maxLength.length)
+                                {
+                                    error =
+                                        $"{model.GetType().FullName}.{prop.Name} length is longer than {maxLength.length}. SaveChanges() has been terminated.";
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (error != null) break;
+                }
+            }
+
+            return error;
         }
 
         private static IReadOnlyDictionary<string, Metadata> LoadMetadataList(StorageContext context,

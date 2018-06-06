@@ -163,6 +163,10 @@ As you can see in the example above BlazorDB will detect associations added to t
 
 **Note:** At this time removing/deleting is not done automatically and needs to be done manually. A future update of BlazorDB will handle deletions properly.  
 
+## Validations
+
+You can annotate your model's propeties with `[Required]` and `[MaxLength(int)]` to enforce required and max length on properties.
+
 ## Example
 
 A Todo sample built with BlazorDB is included in the sample project:
