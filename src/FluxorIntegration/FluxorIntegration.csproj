@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazor.Fluxor" Version="0.0.10" />
+    <PackageReference Include="Blazor.Fluxor" Version="0.0.11.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Browser" Version="0.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="0.4.0" />
     <DotNetCliToolReference Include="Microsoft.AspNetCore.Blazor.Cli" Version="0.4.0" />

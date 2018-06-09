@@ -1,18 +1,20 @@
 ﻿@using Blazor.Fluxor
 @using FluxorIntegration.Store.Movies
 @using FluxorIntegration.Store.Reviews
+@using FluxorIntegration.Store.Middleware
 @page "/"
 
 @inject IState<MovieState> State
 @inject IState<ReviewsState> ReviewState
 @inject IDispatcher Dispatcher
+@inject IState<BlazorDBStorageSetState<FluxorIntegration.Models.Movie>> Movies
 
 <h1>Movie Reviews</h1>
 
 <h2>Notes</h2>
 
 <ul>
-    <li>You can click "Insert Seed Data" to insert some data into the database, or:</li>
+    <li>You can click "Insert Seed Data" to insert some data into the database, and/or:</li>
     <li>Add one or more movie in the form below</li>
     <li>For a movie you can click "Load Reviews"</li>
     <li>You can add one or more reviews to a movie</li>
@@ -154,5 +156,9 @@
     async void OnDebug()
     {
         await Dispatcher.DispatchAsync(new LogContextAction());
+        foreach (var movie in Movies.Current.List)
+        {
+            BlazorLogger.Logger.Log("movie: %o", movie);
+        }
     }
 }
