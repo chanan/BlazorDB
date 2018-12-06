@@ -26,7 +26,7 @@
 </BlazorTable>
 <button class="btn btn-primary" type="button" onclick="@addNewClick">Add New</button>
 <h2>Selected Item</h2>
-<TodoItemForm  />
+<TodoItemForm SelectedId="@SelectedId" NewTodoAdded="@NewTodoAdded" />
 
 @functions {  
     string Filter { get; set; }
@@ -64,7 +64,6 @@
 
     void onClickItem(int i)
     {
-        Console.WriteLine("Todos onClickItem: {0}", i);
         SelectedId = i;
         StateHasChanged();
     }

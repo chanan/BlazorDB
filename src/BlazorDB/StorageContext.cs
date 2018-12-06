@@ -6,6 +6,7 @@ namespace BlazorDB
     public class StorageContext : IStorageContext
     {
         protected IStorageManager StorageManager { get; set; }
+        private bool _initalized = false;
         public async Task LogToConsole()
         {
             await Logger.StartContextType(GetType(), false);
@@ -26,6 +27,8 @@ namespace BlazorDB
 
         public Task Initialize()
         {
+            if (_initalized) return Task.CompletedTask;
+            _initalized = true;
             return StorageManager.LoadContextFromLocalStorage(this);
         }
     }

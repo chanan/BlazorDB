@@ -15,11 +15,6 @@ protected async override Task OnInitAsync()
 }
 ```
 
-## Note about the sample project
-
-The Todo page does not work fully. The TodoForm that allows you to edit an item or add a new item is not working correctly. The OnInitAsync in the 
-child component is not firing. However, since BlazorDB itself it working, I decided to publish the version and figure out the Sample app afterwards.
-
 ## Docs
 
 ### Install

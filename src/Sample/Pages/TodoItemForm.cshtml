@@ -21,7 +21,7 @@
         </div>
     </div>
     <div class="col-sm-10 offset-sm-2">
-        <button type="submit" class="btn btn-primary" onclick="@onclick">Submit</button>
+        <button type="button" class="btn btn-primary" onclick="@onclick">Submit</button>
     </div>
 </form>
 
@@ -33,23 +33,14 @@
 
     protected async override Task OnInitAsync()
     {
-        Console.WriteLine("OnInitAsync");
-        await Context.Initialize();
+        if (Context.Todos == null) await Context.Initialize();
         if (SelectedId == 0) Todo = new TodoItem();
-        else
-        {
-            SetTodo();
-        }
+        else SetTodo();
     }
 
     protected async override Task OnParametersSetAsync()
     {
-        Console.WriteLine("OnParametersSetAsync");
-        if (Context.Todos == null)
-        {
-            Console.WriteLine("OnParametersSetAsync - init");
-            await Context.Initialize();
-        }
+        if (Context.Todos == null) await Context.Initialize();
         SetTodo();
     }
 
