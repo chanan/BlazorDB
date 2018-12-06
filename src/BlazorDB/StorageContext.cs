@@ -1,14 +1,14 @@
-﻿using BlazorDB.Storage;
+﻿using System.Threading.Tasks;
+using BlazorDB.Storage;
 
 namespace BlazorDB
 {
     public class StorageContext : IStorageContext
     {
-        private IStorageManager StorageManager { get; set; } = new StorageManager(); // Dep injection not working right now
-
-        public void LogToConsole()
+        protected IStorageManager StorageManager { get; set; }
+        public async Task LogToConsole()
         {
-            Logger.StartContextType(GetType(), false);
+            await Logger.StartContextType(GetType(), false);
             var storageSets = StorageManagerUtil.GetStorageSets(GetType());
             foreach (var prop in storageSets)
             {
@@ -19,9 +19,14 @@ namespace BlazorDB
             Logger.EndGroup();
         }
 
-        public int SaveChanges()
+        public Task<int> SaveChanges()
         {
             return StorageManager.SaveContextToLocalStorage(this);
+        }
+
+        public Task Initialize()
+        {
+            return StorageManager.LoadContextFromLocalStorage(this);
         }
     }
 }

@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
 namespace BlazorDB
 {
@@ -26,14 +28,19 @@ namespace BlazorDB
         private static void Scan(IServiceCollection serviceCollection, Assembly assembly)
         {
             var types = ScanForContexts(serviceCollection, assembly);
-            RegisterBlazorDb(serviceCollection, types);
-        }
-
-        private static void RegisterBlazorDb(IServiceCollection serviceCollection, IEnumerable<Type> types)
-        {
             serviceCollection.AddSingleton(StorageManager);
-            foreach (var contextType in types)
-                StorageManager.LoadContextFromStorageOrCreateNew(serviceCollection, contextType);
+
+            foreach (var type in types)
+            {
+                serviceCollection.AddSingleton(type, s =>
+                {
+                    var jsRuntime = s.GetRequiredService<IJSRuntime>();
+                    var instance = Activator.CreateInstance(type);
+                    var smProp = type.GetProperty("StorageManager", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    smProp.SetValue(instance, StorageManager);
+                    return instance;
+                });
+            }
         }
 
         private static IEnumerable<Type> ScanForContexts(IServiceCollection serviceCollection, Assembly assembly)

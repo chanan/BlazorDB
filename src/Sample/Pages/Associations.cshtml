@@ -45,6 +45,10 @@
 
 @functions {
     Person _person;
+    protected async override Task OnInitAsync()
+    {
+        await Context.Initialize();
+    }
     void OnAdd(UIMouseEventArgs e)
     {
         var person = new Person { FirstName = "John", LastName = "Smith" };

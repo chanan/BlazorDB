@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace BlazorDB.Storage
 {
@@ -10,23 +11,23 @@ namespace BlazorDB.Storage
         private const string Normal = "color: black; font-style: normal;";
         internal static bool LogDebug { get; set; } = true;
 
-        internal static void LogStorageSetToConsole(Type type, object list)
+        internal async static Task LogStorageSetToConsole(Type type, object list)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.Log($"StorageSet<{type.GetGenericArguments()[0].Name}>: %o", list);
+            await BlazorLogger.Logger.Log($"StorageSet<{type.GetGenericArguments()[0].Name}>: %o", list);
         }
 
-        internal static void StartContextType(Type contextType, bool loading = true)
+        internal async static Task StartContextType(Type contextType, bool loading = true)
         {
             if (!LogDebug) return;
-            var message = loading ? " loading" : " log";
-            BlazorLogger.Logger.GroupCollapsed($"Context{message}: %c{contextType.Namespace}.{contextType.Name}", Blue);
+            var message = loading ? "loading" : "log";
+            await BlazorLogger.Logger.GroupCollapsed($"Context {message}: %c{contextType.Namespace}.{contextType.Name}", Blue);
         }
 
-        internal static void ContextSaved(Type contextType)
+        internal async static Task ContextSaved(Type contextType)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.GroupCollapsed($"Context %csaved: %c{contextType.Namespace}.{contextType.Name}", Green,
+            await BlazorLogger.Logger.GroupCollapsed($"Context %csaved: %c{contextType.Namespace}.{contextType.Name}", Green,
                 Blue);
         }
 

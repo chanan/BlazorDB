@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorDB", "src\BlazorDB\Bl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "src\Sample\Sample.csproj", "{DAABB1BD-F735-4AB8-8ECF-70E00048175B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluxorIntegration", "src\FluxorIntegration\FluxorIntegration.csproj", "{9C42034D-6331-4623-B178-7417F9AB1345}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{DAABB1BD-F735-4AB8-8ECF-70E00048175B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DAABB1BD-F735-4AB8-8ECF-70E00048175B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DAABB1BD-F735-4AB8-8ECF-70E00048175B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C42034D-6331-4623-B178-7417F9AB1345}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C42034D-6331-4623-B178-7417F9AB1345}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C42034D-6331-4623-B178-7417F9AB1345}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C42034D-6331-4623-B178-7417F9AB1345}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

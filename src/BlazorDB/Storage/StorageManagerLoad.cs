@@ -3,32 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Microsoft.AspNetCore.Blazor;
-using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
     internal class StorageManagerLoad
     {
-        public void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
+        public async Task LoadContextFromLocalStorage(StorageContext context)
         {
-            Logger.StartContextType(contextType);
+            var contextType = context.GetType();
+            await Logger.StartContextType(contextType);
             var storageSets = StorageManagerUtil.GetStorageSets(contextType);
-            var stringModels = LoadStringModels(contextType, storageSets);
+            var stringModels = await LoadStringModels(contextType, storageSets);
             //PrintStringModels(stringModels);
             stringModels = ScanNonAssociationModels(storageSets, stringModels);
             stringModels = ScanAssociationModels(storageSets, stringModels);
             stringModels = DeserializeModels(stringModels, storageSets);
             //PrintStringModels(stringModels);
-            var context = CreateContext(contextType, stringModels);
-            RegisterContext(serviceCollection, contextType, context);
+            await EnrichContext(context, contextType, stringModels);
             Logger.EndGroup();
         }
 
-        private static object CreateContext(Type contextType,
+        private static async Task EnrichContext(StorageContext context, Type contextType,
             IReadOnlyDictionary<Type, Dictionary<int, SerializedModel>> stringModels)
         {
-            var context = Activator.CreateInstance(contextType);
             foreach (var prop in contextType.GetProperties())
                 if (prop.PropertyType.IsGenericType &&
                     prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>))
@@ -36,7 +35,7 @@ namespace BlazorDB.Storage
                     var modelType = prop.PropertyType.GetGenericArguments()[0];
                     var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
                     var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                    var metadata = StorageManagerUtil.LoadMetadata(storageTableName);
+                    var metadata = await StorageManagerUtil.LoadMetadata(storageTableName);
                     if (stringModels.ContainsKey(modelType))
                     {
                         var map = stringModels[modelType];
@@ -46,14 +45,11 @@ namespace BlazorDB.Storage
                     {
                         Logger.LoadModelInContext(modelType, 0);
                     }
-
                     var storageSet = metadata != null
                         ? LoadStorageSet(storageSetType, contextType, modelType, stringModels[modelType])
                         : CreateNewStorageSet(storageSetType, contextType);
                     prop.SetValue(context, storageSet);
                 }
-
-            return context;
         }
 
         private static Dictionary<Type, Dictionary<int, SerializedModel>> DeserializeModels(
@@ -251,7 +247,7 @@ namespace BlazorDB.Storage
 
         private static string ReplaceListWithAssociationList(string serializedModel, string propName, string strList)
         {
-            var propStart = serializedModel.IndexOf($"\"{propName}\":[", StringComparison.Ordinal);
+            var propStart = serializedModel.IndexOf($"\"{propName.ToCamelCase()}\":[", StringComparison.Ordinal);
             var start = serializedModel.IndexOf('[', propStart) + 1;
             var end = serializedModel.IndexOf(']', start);
             var result = StorageManagerUtil.ReplaceString(serializedModel, start, end, strList);
@@ -262,13 +258,13 @@ namespace BlazorDB.Storage
             out List<int> idList)
         {
             var list = new List<int>();
-            if (serializedModel.IndexOf($"\"{propName}\":null", StringComparison.Ordinal) != -1)
+            if (serializedModel.IndexOf($"\"{propName.ToCamelCase()}\":null", StringComparison.Ordinal) != -1)
             {
                 idList = list;
                 return false;
             }
 
-            var propStart = serializedModel.IndexOf($"\"{propName}\":[", StringComparison.Ordinal);
+            var propStart = serializedModel.IndexOf($"\"{propName.ToCamelCase()}\":[", StringComparison.Ordinal);
             var start = serializedModel.IndexOf('[', propStart) + 1;
             var end = serializedModel.IndexOf(']', start);
             var stringlist = serializedModel.Substring(start, end - start);
@@ -297,7 +293,7 @@ namespace BlazorDB.Storage
             return done;
         }
 
-        private static Dictionary<Type, Dictionary<int, SerializedModel>> LoadStringModels(Type contextType,
+        private static async Task<Dictionary<Type, Dictionary<int, SerializedModel>>> LoadStringModels(Type contextType,
             IEnumerable<PropertyInfo> storageSets)
         {
             var stringModels = new Dictionary<Type, Dictionary<int, SerializedModel>>();
@@ -306,12 +302,12 @@ namespace BlazorDB.Storage
                 var modelType = prop.PropertyType.GetGenericArguments()[0];
                 var map = new Dictionary<int, SerializedModel>();
                 var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                var metadata = StorageManagerUtil.LoadMetadata(storageTableName);
+                var metadata = await StorageManagerUtil.LoadMetadata(storageTableName);
                 if (metadata == null) continue;
                 foreach (var guid in metadata.Guids)
                 {
                     var name = $"{storageTableName}-{guid}";
-                    var serializedModel = BlazorDBInterop.GetItem(name, false);
+                    var serializedModel = await BlazorDBInterop.GetItem(name, false);
                     var id = FindIdInSerializedModel(serializedModel);
                     map.Add(id, new SerializedModel {StringModel = serializedModel});
                 }
@@ -325,13 +321,13 @@ namespace BlazorDB.Storage
         //TODO: Verify that the found id is at the top level in case of nested objects
         private static bool TryGetIdFromSerializedModel(string serializedModel, string propName, out int id)
         {
-            if (serializedModel.IndexOf($"\"{propName}\":null", StringComparison.Ordinal) != -1)
+            if (serializedModel.IndexOf($"\"{propName.ToCamelCase()}\":null", StringComparison.Ordinal) != -1)
             {
                 id = -1;
                 return false;
             }
 
-            var propStart = serializedModel.IndexOf($"\"{propName}\":", StringComparison.Ordinal);
+            var propStart = serializedModel.IndexOf($"\"{propName.ToCamelCase()}\":", StringComparison.Ordinal);
             var start = serializedModel.IndexOf(':', propStart);
             id = GetIdFromString(serializedModel, start);
             return true;
@@ -340,7 +336,7 @@ namespace BlazorDB.Storage
         //TODO: Verify that the found id is at the top level in case of nested objects
         private static int FindIdInSerializedModel(string serializedModel)
         {
-            var start = serializedModel.IndexOf($"\"{StorageManagerUtil.Id}\":", StringComparison.Ordinal);
+            var start = serializedModel.IndexOf($"\"{StorageManagerUtil.Id.ToCamelCase()}\":", StringComparison.Ordinal);
             return GetIdFromString(serializedModel, start);
         }
 
@@ -368,7 +364,7 @@ namespace BlazorDB.Storage
 
         private static string ReplaceIdWithAssociation(string result, string name, int id, string stringModel)
         {
-            var stringToFind = $"\"{name}\":{id}";
+            var stringToFind = $"\"{name.ToCamelCase()}\":{id}";
             var nameIndex = result.IndexOf(stringToFind, StringComparison.Ordinal);
             var index = result.IndexOf(id.ToString(), nameIndex, StringComparison.Ordinal);
             result = StorageManagerUtil.ReplaceString(result, index, index + id.ToString().Length, stringModel);
@@ -398,20 +394,13 @@ namespace BlazorDB.Storage
             var model = genericMethod.Invoke(new JsonWrapper(), new object[] {value});
             return model;
         }
-
-        private static void RegisterContext(IServiceCollection serviceCollection, Type type, object context)
-        {
-            serviceCollection.AddSingleton(
-                type,
-                context);
-        }
     }
 
     internal class JsonWrapper
     {
         public T Deserialize<T>(string value)
         {
-            return JsonUtil.Deserialize<T>(value);
+            return Json.Deserialize<T>(value);
         }
     }
 }

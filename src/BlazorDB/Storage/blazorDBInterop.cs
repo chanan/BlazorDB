@@ -1,28 +1,35 @@
 ﻿using System;
-using Microsoft.AspNetCore.Blazor.Browser.Interop;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
-namespace BlazorDB
+namespace BlazorDB.Storage
 {
     internal class BlazorDBInterop
     {
-        public static bool SetItem(string key, string value, bool session)
+        public static Task<bool> SetItem(string key, string value, bool session)
         {
-            return RegisteredFunction.Invoke<bool>("BlazorDB.blazorDBInterop.SetItem", key, value, session);
+            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.setItem", key, value, session);
         }
 
-        public static string GetItem(string key, bool session)
+        public static Task<string> GetItem(string key, bool session)
         {
-            return RegisteredFunction.Invoke<string>("BlazorDB.blazorDBInterop.GetItem", key, session);
+            return JSRuntime.Current.InvokeAsync<string>("blazorDBInterop.getItem", key, session);
         }
 
-        public static bool RemoveItem(string key, bool session)
+        public static Task<bool> RemoveItem(string key, bool session)
         {
-            return RegisteredFunction.Invoke<bool>("BlazorDB.blazorDBInterop.RemoveItem", key, session);
+            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.removeItem", key, session);
         }
 
-        public static bool Clear(bool session)
+        public static Task<bool> Clear(bool session)
         {
-            return RegisteredFunction.Invoke<bool>("BlazorDB.blazorDBInterop.Clear", session);
+            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.clear", session);
+        }
+        public static Task<bool> Log(params object[] list)
+        {
+            var _list = new List<object>(list); //This line is needed see: https://github.com/aspnet/Blazor/issues/740
+            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.logs");
         }
     }
 }

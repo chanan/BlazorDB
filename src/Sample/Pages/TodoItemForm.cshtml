@@ -31,8 +31,10 @@
 
     TodoItem Todo { get; set; } = new TodoItem();
 
-    protected override void OnInit()
+    protected async override Task OnInitAsync()
     {
+        Console.WriteLine("OnInitAsync");
+        await Context.Initialize();
         if (SelectedId == 0) Todo = new TodoItem();
         else
         {
@@ -40,13 +42,20 @@
         }
     }
 
-    protected override void OnParametersSet()
+    protected async override Task OnParametersSetAsync()
     {
+        Console.WriteLine("OnParametersSetAsync");
+        if (Context.Todos == null)
+        {
+            Console.WriteLine("OnParametersSetAsync - init");
+            await Context.Initialize();
+        }
         SetTodo();
     }
 
     void SetTodo()
     {
+        if (Context.Todos == null) return;
         var query = from todo in Context.Todos
                     where todo.Id == SelectedId
                     select todo;
@@ -54,13 +63,13 @@
         Todo = item != null ? item : new TodoItem();
     }
 
-    void onclick()
+    async void onclick()
     {
-        if(Todo.Id == 0)
+        if (Todo.Id == 0)
         {
             Context.Todos.Add(Todo); //add new todo to the context
         }
-        Context.SaveChanges();
+        await Context.SaveChanges();
         StateHasChanged();
         NewTodoAdded();
     }

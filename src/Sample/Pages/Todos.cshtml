@@ -5,7 +5,7 @@
 
 <form>
     <input bind="@Filter" type="text" placeholder="Type to filter" />
-    <button class="btn btn-primary" type="submit" onclick="@onFilter">Filter</button>
+    <button class="btn btn-primary" type="button" onclick="@onFilter">Filter</button>
 </form>
 
 <BlazorTable IsBordered="true" IsHovarable="true">
@@ -17,7 +17,7 @@
         {
             var color = todo.IsDone ? Color.Success : Color.Danger;
             <TableRow Color="@color">
-                <td><button  class="btn btn-secondary" onclick="@((e) => { onclick(todo.Id); })">@todo.Id</button></td>
+                <td><button  class="btn btn-secondary" onclick="@(() => onClickItem(todo.Id))">@todo.Id</button></td>
                 <td>@todo.IsDone</td>
                 <td>@todo.Text</td>
             </TableRow>
@@ -26,31 +26,32 @@
 </BlazorTable>
 <button class="btn btn-primary" type="button" onclick="@addNewClick">Add New</button>
 <h2>Selected Item</h2>
-<TodoItemForm SelectedId="@SelectedId" NewTodoAdded="@NewTodoAdded" />
+<TodoItemForm  />
 
 @functions {  
     string Filter { get; set; }
-    IList<TodoItem> Filtered { get; set; }
+    List<TodoItem> Filtered { get; set; } = new List<TodoItem>();
     int SelectedId { get; set; } = 1;
 
-    protected override void OnInit()
+    protected async override Task OnInitAsync()
     {
-        if(Context.Todos.Count == 0)
+        await Context.Initialize();
+        if (Context.Todos.Count == 0)
         {
             //Insert some initial data
-            Context.Todos.Add(new TodoItem { IsDone = true, Text = "Create initial BlazorDB project" } );
+            Context.Todos.Add(new TodoItem { IsDone = true, Text = "Create initial BlazorDB project" });
             Context.Todos.Add(new TodoItem { IsDone = true, Text = "Make a todo app" });
             Context.Todos.Add(new TodoItem { IsDone = false, Text = "Make BlazorDB really awesome!" });
-            Context.SaveChanges();
+            await Context.SaveChanges();
         }
-        Filtered = Context.Todos;
+        Filtered = Context.Todos.ToList<TodoItem>();
     }
 
     void onFilter()
     {
         if(Filter == String.Empty)
         {
-            Filtered = Context.Todos;
+            Filtered = Context.Todos.ToList<TodoItem>();
         }
         else
         {
@@ -61,8 +62,9 @@
         }
     }
 
-    void onclick(int i)
+    void onClickItem(int i)
     {
+        Console.WriteLine("Todos onClickItem: {0}", i);
         SelectedId = i;
         StateHasChanged();
     }

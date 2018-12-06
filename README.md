@@ -4,6 +4,22 @@ In memory, persisted to localstorage, database for .net Blazor browser framework
 ## Warning
 This library like Blazor itself is experimental and API is likely to change.
 
+## Breaking change as of V0.7.0
+
+At this time, you will need to initialize the `Context` prior to using it. I hope that I cna get this done automatically again in a future version:
+
+```
+protected async override Task OnInitAsync()
+{
+    await Context.Initialize();
+}
+```
+
+## Note about the sample project
+
+The Todo page does not work fully. The TodoForm that allows you to edit an item or add a new item is not working correctly. The OnInitAsync in the 
+child component is not firing. However, since BlazorDB itself it working, I decided to publish the version and figure out the Sample app afterwards.
+
 ## Docs
 
 ### Install
@@ -65,6 +81,15 @@ Inject your context into your component:
 ```
 @using Sample.Models
 @inject Context Context
+```
+
+Currently, as of v0.7.0, before using the `Context` object you must initialize it. Hopefully, this requirement will go away in a future version:
+
+```
+protected async override Task OnInitAsync()
+{
+    await Context.Initialize();
+}
 ```
 
 Create a model and add it to your Context:

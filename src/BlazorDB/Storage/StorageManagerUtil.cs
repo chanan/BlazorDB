@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Blazor;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
@@ -18,6 +19,7 @@ namespace BlazorDB.Storage
         internal const string List = "List";
         internal static readonly Type GenericStorageSetType = typeof(StorageSet<>);
         internal static readonly Type GenericListType = typeof(List<>);
+        internal const string JsonId = "id";
 
         internal static List<PropertyInfo> GetStorageSets(Type contextType)
         {
@@ -27,11 +29,11 @@ namespace BlazorDB.Storage
                 select prop).ToList();
         }
 
-        internal static Metadata LoadMetadata(string storageTableName)
+        internal static async Task<Metadata> LoadMetadata(string storageTableName)
         {
             var name = $"{storageTableName}-{Metadata}";
-            var value = BlazorDBInterop.GetItem(name, false);
-            return value != null ? JsonUtil.Deserialize<Metadata>(value) : null;
+            var value = await BlazorDBInterop.GetItem(name, false);
+            return value != null ? Json.Deserialize<Metadata>(value) : null;
         }
 
         internal static string ReplaceString(string source, int start, int end, string stringToInsert)

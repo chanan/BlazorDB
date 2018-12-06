@@ -1,8 +1,10 @@
-﻿namespace BlazorDB
+﻿using System.Threading.Tasks;
+
+namespace BlazorDB
 {
     public interface IStorageContext
     {
-        int SaveChanges();
-        void LogToConsole();
+        Task<int> SaveChanges();
+        Task LogToConsole();
     }
 }

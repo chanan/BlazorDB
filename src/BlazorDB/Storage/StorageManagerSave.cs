@@ -3,29 +3,30 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using BlazorDB.DataAnnotations;
-using Microsoft.AspNetCore.Blazor;
+using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
     internal class StorageManagerSave
     {
-        public int SaveContextToLocalStorage(StorageContext context)
+        public async Task<int> SaveContextToLocalStorage(StorageContext context)
         {
             var total = 0;
             var contextType = context.GetType();
-            Logger.ContextSaved(contextType);
+            await Logger.ContextSaved(contextType);
             var storageSets = StorageManagerUtil.GetStorageSets(contextType);
             var error = ValidateModels(context, storageSets);
             if (error == null)
             {
-                var metadataMap = LoadMetadataList(context, storageSets, contextType);
-                total = SaveStorageSets(context, total, contextType, storageSets, metadataMap);
+                var metadataMap = await LoadMetadataList(context, storageSets, contextType);
+                total = await SaveStorageSets(context, total, contextType, storageSets, metadataMap);
                 Logger.EndGroup();
             }
             else
             {
-                BlazorLogger.Logger.Error("SaveChanges() terminated due to validation error");
+                await BlazorLogger.Logger.Error("SaveChanges() terminated due to validation error");
                 Logger.EndGroup();
                 throw new BlazorDBUpdateException(error);
             }
@@ -83,7 +84,7 @@ namespace BlazorDB.Storage
             return error;
         }
 
-        private static IReadOnlyDictionary<string, Metadata> LoadMetadataList(StorageContext context,
+        private static async Task<IReadOnlyDictionary<string, Metadata>> LoadMetadataList(StorageContext context,
             IEnumerable<PropertyInfo> storageSets, Type contextType)
         {
             var map = new Dictionary<string, Metadata>();
@@ -91,7 +92,7 @@ namespace BlazorDB.Storage
             {
                 var modelType = prop.PropertyType.GetGenericArguments()[0];
                 var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                var metadata = StorageManagerUtil.LoadMetadata(storageTableName) ?? new Metadata
+                var metadata = await StorageManagerUtil.LoadMetadata(storageTableName) ?? new Metadata
                 {
                     Guids = new List<Guid>(),
                     ContextName = Util.GetFullyQualifiedTypeName(context.GetType()),
@@ -103,7 +104,7 @@ namespace BlazorDB.Storage
             return map;
         }
 
-        private static int SaveStorageSets(StorageContext context, int total, Type contextType,
+        private static async Task<int> SaveStorageSets(StorageContext context, int total, Type contextType,
             List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             foreach (var prop in storageSets)
@@ -115,7 +116,7 @@ namespace BlazorDB.Storage
                 EnsureAllModelsHaveIds(storageSetValue, modelType, metadataMap);
                 EnsureAllAssociationsHaveIds(context, storageSetValue, modelType, storageSets, metadataMap);
 
-                var guids = SaveModels(storageSetValue, modelType, storageTableName, storageSets);
+                var guids = await SaveModels(storageSetValue, modelType, storageTableName, storageSets);
                 total += guids.Count;
                 var oldMetadata = metadataMap[Util.GetFullyQualifiedTypeName(modelType)];
                 SaveMetadata(storageTableName, guids, contextType, modelType, oldMetadata);
@@ -220,7 +221,7 @@ namespace BlazorDB.Storage
             }
         }
 
-        private static void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType,
+        private static async void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType,
             Metadata oldMetadata)
         {
             var metadata = new Metadata
@@ -231,10 +232,10 @@ namespace BlazorDB.Storage
                 MaxId = oldMetadata.MaxId
             };
             var name = $"{storageTableName}-{StorageManagerUtil.Metadata}";
-            BlazorDBInterop.SetItem(name, JsonUtil.Serialize(metadata), false);
+            await BlazorDBInterop.SetItem(name, Json.Serialize(metadata), false);
         }
 
-        private static List<Guid> SaveModels(object storageSetValue, Type modelType, string storageTableName,
+        private static async Task<List<Guid>> SaveModels(object storageSetValue, Type modelType, string storageTableName,
             List<PropertyInfo> storageSets)
         {
             var guids = new List<Guid>();
@@ -247,8 +248,8 @@ namespace BlazorDB.Storage
                 guids.Add(guid);
                 var model = enumerator.Current;
                 var name = $"{storageTableName}-{guid}";
-                var serializedModel = ScanModelForAssociations(model, storageSets, JsonUtil.Serialize(model));
-                BlazorDBInterop.SetItem(name, serializedModel, false);
+                var serializedModel = ScanModelForAssociations(model, storageSets, Json.Serialize(model));
+                await BlazorDBInterop.SetItem(name, serializedModel, false);
             }
 
             return guids;
@@ -286,7 +287,7 @@ namespace BlazorDB.Storage
             {
                 var idProp = GetIdProperty(item);
                 var id = Convert.ToString(idProp.GetValue(item));
-                var serializedItem = JsonUtil.Serialize(item);
+                var serializedItem = Json.Serialize(item);
                 result = ReplaceModelWithId(result, serializedItem, id);
             }
 
@@ -298,7 +299,7 @@ namespace BlazorDB.Storage
             var associatedModel = prop.GetValue(model);
             var idProp = GetIdProperty(associatedModel);
             var id = Convert.ToString(idProp.GetValue(associatedModel));
-            var serializedItem = JsonUtil.Serialize(associatedModel);
+            var serializedItem = Json.Serialize(associatedModel);
             result = ReplaceModelWithId(result, serializedItem, id);
             return result;
         }

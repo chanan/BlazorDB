@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace BlazorDB.Storage
 {
@@ -8,14 +8,14 @@ namespace BlazorDB.Storage
         private readonly StorageManagerLoad _storageManagerLoad = new StorageManagerLoad();
         private readonly StorageManagerSave _storageManagerSave = new StorageManagerSave();
 
-        public int SaveContextToLocalStorage(StorageContext context)
+        public Task<int> SaveContextToLocalStorage(StorageContext context)
         {
             return _storageManagerSave.SaveContextToLocalStorage(context);
         }
 
-        public void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType)
+        public Task LoadContextFromLocalStorage(StorageContext context)
         {
-            _storageManagerLoad.LoadContextFromStorageOrCreateNew(serviceCollection, contextType);
+            return _storageManagerLoad.LoadContextFromLocalStorage(context);
         }
     }
 }

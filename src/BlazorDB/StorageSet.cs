@@ -10,9 +10,9 @@ namespace BlazorDB
         private string StorageContextTypeName { get; set; }
         private IList<TModel> List { get; set; } = new List<TModel>();
 
-        public void LogToConsole()
+        public async void LogToConsole()
         {
-            Logger.LogStorageSetToConsole(GetType(), List);
+            await Logger.LogStorageSetToConsole(GetType(), List);
         }
 
         public TModel this[int index]

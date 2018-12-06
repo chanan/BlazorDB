@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace BlazorDB.Storage
 {
     public interface IStorageManager
     {
-        int SaveContextToLocalStorage(StorageContext context);
-        void LoadContextFromStorageOrCreateNew(IServiceCollection serviceCollection, Type contextType);
+        Task<int> SaveContextToLocalStorage(StorageContext context);
+        Task LoadContextFromLocalStorage(StorageContext context);
     }
 }

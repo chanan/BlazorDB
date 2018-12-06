@@ -27,6 +27,10 @@
 
 @functions {
     private Person Person { get; set; }
+    protected async override Task OnInitAsync()
+    {
+        await Context.Initialize();
+    }
     void OnclickAddPerson()
     {
         //In this case, address gets serailized as part of the object because Address is not in the Context
@@ -55,14 +59,14 @@
         StateHasChanged();
     }
 
-    void OnclickSaveChanges()
+    async void OnclickSaveChanges()
     {
-        Context.SaveChanges();
+        await Context.SaveChanges();
     }
 
     void OnRequired()
     {
-        var person = new Person {LastName = "Firstname required!"};
+        var person = new Person { LastName = "Firstname required!" };
         Context.People.Add(person);
         Context.SaveChanges();
     }
