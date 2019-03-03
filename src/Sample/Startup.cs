@@ -1,8 +1,7 @@
-﻿using System;
-using BlazorDB;
-using Microsoft.AspNetCore.Blazor.Builder;
+﻿using BlazorDB;
+using Microsoft.AspNetCore.Components.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.JSInterop;
+
 
 namespace Sample
 {
@@ -17,7 +16,7 @@ namespace Sample
             });
         }
 
-        public void Configure(IBlazorApplicationBuilder app)
+        public void Configure(IComponentsApplicationBuilder app)
         {
             app.AddComponent<App>("app");
         }
