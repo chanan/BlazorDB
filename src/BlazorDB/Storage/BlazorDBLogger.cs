@@ -1,9 +1,10 @@
-﻿using System;
+﻿using BlazorLogger;
+using System;
 using System.Threading.Tasks;
 
 namespace BlazorDB.Storage
 {
-    internal static class Logger
+    internal class BlazorDBLogger : IBlazorDBLogger
     {
         private const string Blue = "color: blue; font-style: bold;";
         private const string Green = "color: green; font-style: bold;";
@@ -11,63 +12,75 @@ namespace BlazorDB.Storage
         private const string Normal = "color: black; font-style: normal;";
         internal static bool LogDebug { get; set; } = true;
 
-        internal async static Task LogStorageSetToConsole(Type type, object list)
+        private ILogger _logger;
+        public BlazorDBLogger(ILogger logger)
         {
-            if (!LogDebug) return;
-            await BlazorLogger.Logger.Log($"StorageSet<{type.GetGenericArguments()[0].Name}>: %o", list);
+            _logger = logger;
         }
 
-        internal async static Task StartContextType(Type contextType, bool loading = true)
+        public async Task LogStorageSetToConsole(Type type, object list)
+        {
+            if (!LogDebug) return;
+            await _logger.Log($"StorageSet<{type.GetGenericArguments()[0].Name}>: %o", list);
+        }
+
+        public async Task StartContextType(Type contextType, bool loading = true)
         {
             if (!LogDebug) return;
             var message = loading ? "loading" : "log";
-            await BlazorLogger.Logger.GroupCollapsed($"Context {message}: %c{contextType.Namespace}.{contextType.Name}", Blue);
+            await _logger.GroupCollapsed($"Context {message}: %c{contextType.Namespace}.{contextType.Name}", Blue);
         }
 
-        internal async static Task ContextSaved(Type contextType)
+        public async Task ContextSaved(Type contextType)
         {
             if (!LogDebug) return;
-            await BlazorLogger.Logger.GroupCollapsed($"Context %csaved: %c{contextType.Namespace}.{contextType.Name}", Green,
+            await _logger.GroupCollapsed($"Context %csaved: %c{contextType.Namespace}.{contextType.Name}", Green,
                 Blue);
         }
 
-        internal static void StorageSetSaved(Type modelType, int count)
+        public void StorageSetSaved(Type modelType, int count)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.Log(
+            _logger.Log(
                 $"StorageSet %csaved:  %c{modelType.Namespace}.{modelType.Name}%c with {count} items", Green, Blue,
                 Normal);
         }
 
-        internal static void EndGroup()
+        public void EndGroup()
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.GroupEnd();
+            _logger.GroupEnd();
         }
 
-        internal static void ItemAddedToContext(string contextTypeName, Type modelType, object item)
+        public void ItemAddedToContext(string contextTypeName, Type modelType, object item)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.GroupCollapsed(
+            _logger.GroupCollapsed(
                 $"Item  %c{modelType.Namespace}.{modelType.Name}%c %cadded%c to context: %c{contextTypeName}", Blue,
                 Normal, Green, Normal, Blue);
-            BlazorLogger.Logger.Log("Item: %o", item);
-            BlazorLogger.Logger.GroupEnd();
+            _logger.Log("Item: %o", item);
+            _logger.GroupEnd();
         }
 
-        internal static void LoadModelInContext(Type modelType, int count)
+        public void LoadModelInContext(Type modelType, int count)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.Log(
+            _logger.Log(
                 $"StorageSet loaded:  %c{modelType.Namespace}.{modelType.Name}%c with {count} items", Blue, Normal);
         }
 
-        internal static void ItemRemovedFromContext(string contextTypeName, Type modelType)
+        public void ItemRemovedFromContext(string contextTypeName, Type modelType)
         {
             if (!LogDebug) return;
-            BlazorLogger.Logger.Log(
+            _logger.Log(
                 $"Item  %c{modelType.Namespace}.{modelType.Name}%c %cremoved%c from context: %c{contextTypeName}", Blue,
                 Normal, Red, Normal, Blue);
+        }
+
+        public void Error(string error)
+        {
+            //Always log errors
+            _logger.Error(error);
         }
     }
 }

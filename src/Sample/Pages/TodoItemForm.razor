@@ -33,20 +33,35 @@
 
     protected async override Task OnInitAsync()
     {
-        if (Context.Todos == null) await Context.Initialize();
-        if (SelectedId == 0) Todo = new TodoItem();
-        else SetTodo();
+        if (Context.Todos == null)
+        {
+            await Context.Initialize();
+        }
+        if (SelectedId == 0)
+        {
+            Todo = new TodoItem();
+        }
+        else
+        {
+            SetTodo();
+        }
     }
 
     protected async override Task OnParametersSetAsync()
     {
-        if (Context.Todos == null) await Context.Initialize();
+        if (Context.Todos == null)
+        {
+            await Context.Initialize();
+        }
         SetTodo();
     }
 
     void SetTodo()
     {
-        if (Context.Todos == null) return;
+        if (Context.Todos == null)
+        {
+            return;
+        }
         var query = from todo in Context.Todos
                     where todo.Id == SelectedId
                     select todo;

@@ -8,6 +8,7 @@ namespace BlazorDB
     public class StorageSet<TModel> : IList<TModel> where TModel : class
     {
         private string StorageContextTypeName { get; set; }
+        private IBlazorDBLogger Logger { get; set; }
         private IList<TModel> List { get; set; } = new List<TModel>();
 
         public async void LogToConsole()

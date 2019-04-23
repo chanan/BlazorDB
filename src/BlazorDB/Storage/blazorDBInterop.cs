@@ -1,35 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
-    internal class BlazorDBInterop
+    internal class BlazorDBInterop : IBlazorDBInterop
     {
-        public static Task<bool> SetItem(string key, string value, bool session)
+        private readonly IJSRuntime _jsRuntime;
+
+        public BlazorDBInterop(IJSRuntime jsRuntime)
         {
-            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.setItem", key, value, session);
+            _jsRuntime = jsRuntime;
+        }
+        public Task<bool> SetItem(string key, string value, bool session)
+        {
+            return _jsRuntime.InvokeAsync<bool>("blazorDBInterop.setItem", key, value, session);
         }
 
-        public static Task<string> GetItem(string key, bool session)
+        public Task<string> GetItem(string key, bool session)
         {
-            return JSRuntime.Current.InvokeAsync<string>("blazorDBInterop.getItem", key, session);
+            return _jsRuntime.InvokeAsync<string>("blazorDBInterop.getItem", key, session);
         }
 
-        public static Task<bool> RemoveItem(string key, bool session)
+        public Task<bool> RemoveItem(string key, bool session)
         {
-            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.removeItem", key, session);
+            return _jsRuntime.InvokeAsync<bool>("blazorDBInterop.removeItem", key, session);
         }
 
-        public static Task<bool> Clear(bool session)
+        public Task<bool> Clear(bool session)
         {
-            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.clear", session);
+            return _jsRuntime.InvokeAsync<bool>("blazorDBInterop.clear", session);
         }
-        public static Task<bool> Log(params object[] list)
+        public Task<bool> Log(params object[] list)
         {
             var _list = new List<object>(list); //This line is needed see: https://github.com/aspnet/Blazor/issues/740
-            return JSRuntime.Current.InvokeAsync<bool>("blazorDBInterop.logs");
+            return _jsRuntime.InvokeAsync<bool>("blazorDBInterop.logs");
         }
     }
 }

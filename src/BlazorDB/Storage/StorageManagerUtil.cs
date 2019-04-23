@@ -7,56 +7,63 @@ using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
-    internal static class StorageManagerUtil
+    internal class StorageManagerUtil : IStorageManagerUtil
     {
-        internal const BindingFlags Flags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-        internal const string Metadata = "metadata";
-        internal const string GetEnumerator = "GetEnumerator";
-        internal const string Id = "Id";
-        internal const string StorageContextTypeName = "StorageContextTypeName";
-        internal const string Add = "Add";
-        internal const string Deserialize = "Deserialize";
-        internal const string List = "List";
-        internal static readonly Type GenericStorageSetType = typeof(StorageSet<>);
-        internal static readonly Type GenericListType = typeof(List<>);
-        internal const string JsonId = "id";
+        public const BindingFlags Flags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+        public const string Metadata = "metadata";
+        public const string GetEnumerator = "GetEnumerator";
+        public const string Id = "Id";
+        public const string StorageContextTypeName = "StorageContextTypeName";
+        public const string Add = "Add";
+        public const string Deserialize = "Deserialize";
+        public const string List = "List";
+        public static readonly Type GenericStorageSetType = typeof(StorageSet<>);
+        public static readonly Type GenericListType = typeof(List<>);
+        public const string JsonId = "id";
 
-        internal static List<PropertyInfo> GetStorageSets(Type contextType)
+        private IBlazorDBInterop _blazorDBInterop;
+
+        public StorageManagerUtil(IBlazorDBInterop blazorDBInterop)
         {
-            return (from prop in contextType.GetProperties()
-                where prop.PropertyType.IsGenericType &&
-                      prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>)
-                select prop).ToList();
+            _blazorDBInterop = blazorDBInterop;
         }
 
-        internal static async Task<Metadata> LoadMetadata(string storageTableName)
+        public List<PropertyInfo> GetStorageSets(Type contextType)
+        {
+            return (from prop in contextType.GetProperties()
+                    where prop.PropertyType.IsGenericType &&
+                          prop.PropertyType.GetGenericTypeDefinition() == typeof(StorageSet<>)
+                    select prop).ToList();
+        }
+
+        public async Task<Metadata> LoadMetadata(string storageTableName)
         {
             var name = $"{storageTableName}-{Metadata}";
-            var value = await BlazorDBInterop.GetItem(name, false);
+            var value = await _blazorDBInterop.GetItem(name, false);
             return value != null ? Json.Deserialize<Metadata>(value) : null;
         }
 
-        internal static string ReplaceString(string source, int start, int end, string stringToInsert)
+        public string ReplaceString(string source, int start, int end, string stringToInsert)
         {
             var startStr = source.Substring(0, start);
             var endStr = source.Substring(end);
             return startStr + stringToInsert + endStr;
         }
 
-        internal static bool IsInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
+        public bool IsInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
         {
             var query = from p in storageSets
-                where p.PropertyType.GetGenericArguments()[0] == prop.PropertyType
-                select p;
+                        where p.PropertyType.GetGenericArguments()[0] == prop.PropertyType
+                        select p;
             return query.SingleOrDefault() != null;
         }
 
-        internal static bool IsListInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
+        public bool IsListInContext(List<PropertyInfo> storageSets, PropertyInfo prop)
         {
             var query = from p in storageSets
-                where prop.PropertyType.IsGenericType &&
-                      p.PropertyType.GetGenericArguments()[0] == prop.PropertyType.GetGenericArguments()[0]
-                select p;
+                        where prop.PropertyType.IsGenericType &&
+                              p.PropertyType.GetGenericArguments()[0] == prop.PropertyType.GetGenericArguments()[0]
+                        select p;
             return query.SingleOrDefault() != null;
         }
     }

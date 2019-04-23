@@ -6,7 +6,10 @@ namespace BlazorDB
     public class StorageContext : IStorageContext
     {
         protected IStorageManager StorageManager { get; set; }
+        protected IBlazorDBLogger Logger { get; set; }
+        protected IStorageManagerUtil StorageManagerUtil { get; set; }
         private bool _initalized = false;
+
         public async Task LogToConsole()
         {
             await Logger.StartContextType(GetType(), false);

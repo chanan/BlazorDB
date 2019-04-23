@@ -9,28 +9,38 @@ using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
-    internal class StorageManagerSave
+    internal class StorageManagerSave : IStorageManagerSave
     {
+        private IBlazorDBLogger _logger;
+        private IBlazorDBInterop _blazorDBInterop;
+        private IStorageManagerUtil _storageManagerUtil;
+        public StorageManagerSave(IBlazorDBLogger logger, IBlazorDBInterop blazorDBInterop, IStorageManagerUtil storageManagerUtil)
+        {
+            _logger = logger;
+            _blazorDBInterop = blazorDBInterop;
+            _storageManagerUtil = storageManagerUtil;
+        }
+
         public async Task<int> SaveContextToLocalStorage(StorageContext context)
         {
             var total = 0;
             var contextType = context.GetType();
-            await Logger.ContextSaved(contextType);
-            var storageSets = StorageManagerUtil.GetStorageSets(contextType);
+            await _logger.ContextSaved(contextType);
+            var storageSets = _storageManagerUtil.GetStorageSets(contextType);
             var error = ValidateModels(context, storageSets);
             if (error == null)
             {
                 var metadataMap = await LoadMetadataList(context, storageSets, contextType);
                 total = await SaveStorageSets(context, total, contextType, storageSets, metadataMap);
-                Logger.EndGroup();
+                _logger.EndGroup();
             }
             else
             {
-                await BlazorLogger.Logger.Error("SaveChanges() terminated due to validation error");
-                Logger.EndGroup();
+                _logger.Error("SaveChanges() terminated due to validation error");
+                _logger.EndGroup();
                 throw new BlazorDBUpdateException(error);
             }
-            
+
             return total;
         }
 
@@ -62,7 +72,7 @@ namespace BlazorDB.Storage
 
                         if (Attribute.IsDefined(prop, typeof(MaxLength)))
                         {
-                            var maxLength = (MaxLength) Attribute.GetCustomAttribute(prop, typeof(MaxLength));
+                            var maxLength = (MaxLength)Attribute.GetCustomAttribute(prop, typeof(MaxLength));
                             var value = prop.GetValue(model);
                             if (value != null)
                             {
@@ -84,7 +94,7 @@ namespace BlazorDB.Storage
             return error;
         }
 
-        private static async Task<IReadOnlyDictionary<string, Metadata>> LoadMetadataList(StorageContext context,
+        private async Task<IReadOnlyDictionary<string, Metadata>> LoadMetadataList(StorageContext context,
             IEnumerable<PropertyInfo> storageSets, Type contextType)
         {
             var map = new Dictionary<string, Metadata>();
@@ -92,7 +102,7 @@ namespace BlazorDB.Storage
             {
                 var modelType = prop.PropertyType.GetGenericArguments()[0];
                 var storageTableName = Util.GetStorageTableName(contextType, modelType);
-                var metadata = await StorageManagerUtil.LoadMetadata(storageTableName) ?? new Metadata
+                var metadata = await _storageManagerUtil.LoadMetadata(storageTableName) ?? new Metadata
                 {
                     Guids = new List<Guid>(),
                     ContextName = Util.GetFullyQualifiedTypeName(context.GetType()),
@@ -104,7 +114,7 @@ namespace BlazorDB.Storage
             return map;
         }
 
-        private static async Task<int> SaveStorageSets(StorageContext context, int total, Type contextType,
+        private async Task<int> SaveStorageSets(StorageContext context, int total, Type contextType,
             List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             foreach (var prop in storageSets)
@@ -121,29 +131,29 @@ namespace BlazorDB.Storage
                 var oldMetadata = metadataMap[Util.GetFullyQualifiedTypeName(modelType)];
                 SaveMetadata(storageTableName, guids, contextType, modelType, oldMetadata);
                 DeleteOldModelsFromStorage(oldMetadata, storageTableName);
-                Logger.StorageSetSaved(modelType, guids.Count);
+                _logger.StorageSetSaved(modelType, guids.Count);
             }
 
             return total;
         }
 
-        private static void EnsureAllAssociationsHaveIds(StorageContext context, object storageSetValue, Type modelType,
+        private void EnsureAllAssociationsHaveIds(StorageContext context, object storageSetValue, Type modelType,
             List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
+            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
                 foreach (var prop in model.GetType().GetProperties())
                 {
-                    if (prop.GetValue(model) == null || !StorageManagerUtil.IsInContext(storageSets, prop) &&
-                        !StorageManagerUtil.IsListInContext(storageSets, prop)) continue;
-                    if (StorageManagerUtil.IsInContext(storageSets, prop))
+                    if (prop.GetValue(model) == null || !_storageManagerUtil.IsInContext(storageSets, prop) &&
+                        !_storageManagerUtil.IsListInContext(storageSets, prop)) continue;
+                    if (_storageManagerUtil.IsInContext(storageSets, prop))
                         EnsureOneAssociationHasId(context, prop.GetValue(model), prop.PropertyType, storageSets,
                             metadataMap);
-                    if (StorageManagerUtil.IsListInContext(storageSets, prop))
+                    if (_storageManagerUtil.IsListInContext(storageSets, prop))
                         EnsureManyAssociationHasId(context, prop.GetValue(model), prop, storageSets, metadataMap);
                 }
             }
@@ -153,7 +163,7 @@ namespace BlazorDB.Storage
             List<PropertyInfo> storageSets, IReadOnlyDictionary<string, Metadata> metadataMap)
         {
             var method = listObject.GetType().GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator) method.Invoke(listObject, new object[] { });
+            var enumerator = (IEnumerator)method.Invoke(listObject, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
@@ -183,14 +193,14 @@ namespace BlazorDB.Storage
             IEnumerable<PropertyInfo> storageSets, Type propType)
         {
             var q = from p in storageSets
-                where p.PropertyType.GetGenericArguments()[0] == propType
-                select p;
+                    where p.PropertyType.GetGenericArguments()[0] == propType
+                    select p;
             var storeageSetProp = q.Single();
             var storeageSet = storeageSetProp.GetValue(context);
             var listProp = storeageSet.GetType().GetProperty(StorageManagerUtil.List, StorageManagerUtil.Flags);
             var list = listProp.GetValue(storeageSet);
             var method = list.GetType().GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator) method.Invoke(list, new object[] { });
+            var enumerator = (IEnumerator)method.Invoke(list, new object[] { });
             var found = false;
             while (enumerator.MoveNext())
             {
@@ -211,7 +221,7 @@ namespace BlazorDB.Storage
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
             var metadata = metadataMap[Util.GetFullyQualifiedTypeName(modelType)];
-            var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
+            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
             while (enumerator.MoveNext())
             {
                 var model = enumerator.Current;
@@ -221,7 +231,7 @@ namespace BlazorDB.Storage
             }
         }
 
-        private static async void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType,
+        private async void SaveMetadata(string storageTableName, List<Guid> guids, Type context, Type modelType,
             Metadata oldMetadata)
         {
             var metadata = new Metadata
@@ -232,16 +242,16 @@ namespace BlazorDB.Storage
                 MaxId = oldMetadata.MaxId
             };
             var name = $"{storageTableName}-{StorageManagerUtil.Metadata}";
-            await BlazorDBInterop.SetItem(name, Json.Serialize(metadata), false);
+            await _blazorDBInterop.SetItem(name, Json.Serialize(metadata), false);
         }
 
-        private static async Task<List<Guid>> SaveModels(object storageSetValue, Type modelType, string storageTableName,
+        private async Task<List<Guid>> SaveModels(object storageSetValue, Type modelType, string storageTableName,
             List<PropertyInfo> storageSets)
         {
             var guids = new List<Guid>();
             var storageSetType = StorageManagerUtil.GenericStorageSetType.MakeGenericType(modelType);
             var method = storageSetType.GetMethod(StorageManagerUtil.GetEnumerator);
-            var enumerator = (IEnumerator) method.Invoke(storageSetValue, new object[] { });
+            var enumerator = (IEnumerator)method.Invoke(storageSetValue, new object[] { });
             while (enumerator.MoveNext())
             {
                 var guid = Guid.NewGuid();
@@ -249,31 +259,31 @@ namespace BlazorDB.Storage
                 var model = enumerator.Current;
                 var name = $"{storageTableName}-{guid}";
                 var serializedModel = ScanModelForAssociations(model, storageSets, Json.Serialize(model));
-                await BlazorDBInterop.SetItem(name, serializedModel, false);
+                await _blazorDBInterop.SetItem(name, serializedModel, false);
             }
 
             return guids;
         }
 
-        private static void DeleteOldModelsFromStorage(Metadata metadata, string storageTableName)
+        private void DeleteOldModelsFromStorage(Metadata metadata, string storageTableName)
         {
             foreach (var guid in metadata.Guids)
             {
                 var name = $"{storageTableName}-{guid}";
-                BlazorDBInterop.RemoveItem(name, false);
+                _blazorDBInterop.RemoveItem(name, false);
             }
         }
 
-        private static string ScanModelForAssociations(object model, List<PropertyInfo> storageSets,
+        private string ScanModelForAssociations(object model, List<PropertyInfo> storageSets,
             string serializedModel)
         {
             var result = serializedModel;
             foreach (var prop in model.GetType().GetProperties())
             {
-                if (prop.GetValue(model) == null || !StorageManagerUtil.IsInContext(storageSets, prop) &&
-                    !StorageManagerUtil.IsListInContext(storageSets, prop)) continue;
-                if (StorageManagerUtil.IsInContext(storageSets, prop)) result = FixOneAssociation(model, prop, result);
-                if (StorageManagerUtil.IsListInContext(storageSets, prop))
+                if (prop.GetValue(model) == null || !_storageManagerUtil.IsInContext(storageSets, prop) &&
+                    !_storageManagerUtil.IsListInContext(storageSets, prop)) continue;
+                if (_storageManagerUtil.IsInContext(storageSets, prop)) result = FixOneAssociation(model, prop, result);
+                if (_storageManagerUtil.IsListInContext(storageSets, prop))
                     result = FixManyAssociation(model, prop, result);
             }
 
@@ -282,7 +292,7 @@ namespace BlazorDB.Storage
 
         private static string FixManyAssociation(object model, PropertyInfo prop, string result)
         {
-            var modelList = (IEnumerable) prop.GetValue(model);
+            var modelList = (IEnumerable)prop.GetValue(model);
             foreach (var item in modelList)
             {
                 var idProp = GetIdProperty(item);
@@ -308,15 +318,15 @@ namespace BlazorDB.Storage
             IEnumerable<PropertyInfo> storageSets, int id)
         {
             var q = from p in storageSets
-                where p.PropertyType.GetGenericArguments()[0] == propType
-                select p;
+                    where p.PropertyType.GetGenericArguments()[0] == propType
+                    select p;
             var storeageSetProp = q.Single();
             var storeageSet = storeageSetProp.GetValue(context);
             var listProp = storeageSet.GetType().GetProperty(StorageManagerUtil.List, StorageManagerUtil.Flags);
             var list = listProp.GetValue(storeageSet);
             var addMethod = list.GetType().GetMethod(StorageManagerUtil.Add);
             SetId(associatedModel, id);
-            addMethod.Invoke(list, new[] {associatedModel});
+            addMethod.Invoke(list, new[] { associatedModel });
             return id;
         }
 
@@ -328,7 +338,7 @@ namespace BlazorDB.Storage
         private static int GetId(object item)
         {
             var prop = GetIdProperty(item);
-            return (int) prop.GetValue(item);
+            return (int)prop.GetValue(item);
         }
 
         private static void SetId(object item, int id)
