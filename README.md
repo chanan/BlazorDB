@@ -69,7 +69,7 @@ public class Context : StorageContext
 
 ### Usage
 
-See the full example in the sample app: https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Index.cshtml
+See the full example in the sample app: https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Index.razor
 
 Inject your context into your component:
 
@@ -191,8 +191,8 @@ You can annotate your model's propeties with `[Required]` and `[MaxLength(int)]`
 
 A Todo sample built with BlazorDB is included in the sample project:
 
-* [Todos.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.cshtml)
-* [TodoItemForm.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.cshtml)
+* [Todos.razor](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.razor)
+* [TodoItemForm.razor](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.razor)
 
 ## Fluxor Integration Example
 
