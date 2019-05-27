@@ -23,20 +23,18 @@ First add a reference to the nuget package:
 
 [![NuGet Pre Release](https://img.shields.io/nuget/vpre/BlazorDB.svg)](https://www.nuget.org/packages/BlazorDB/)
 
-Then in Program.cs add Blazor DB to the dependency injection services:
+Then in `Startup.cs` in the method `ConfigureServices` add Blazor DB to the dependency injection services:
 
 ```
-var serviceProvider = new BrowserServiceProvider(services =>
+public void ConfigureServices(IServiceCollection services)
 {
     services.AddBlazorDB(options =>
     {
         options.LogDebug = true;
         options.Assembly = typeof(Program).Assembly;
     });
-});
-new BrowserRenderer(serviceProvider).AddComponent<App>("app");
+}
 ```
-
 Set `LogDebug` to see debug output in the browser console.
 
 ### Setup
