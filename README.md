@@ -23,20 +23,18 @@ First add a reference to the nuget package:
 
 [![NuGet Pre Release](https://img.shields.io/nuget/vpre/BlazorDB.svg)](https://www.nuget.org/packages/BlazorDB/)
 
-Then in Program.cs add Blazor DB to the dependency injection services:
+Then in `Startup.cs` in the method `ConfigureServices` add Blazor DB to the dependency injection services:
 
 ```
-var serviceProvider = new BrowserServiceProvider(services =>
+public void ConfigureServices(IServiceCollection services)
 {
     services.AddBlazorDB(options =>
     {
         options.LogDebug = true;
         options.Assembly = typeof(Program).Assembly;
     });
-});
-new BrowserRenderer(serviceProvider).AddComponent<App>("app");
+}
 ```
-
 Set `LogDebug` to see debug output in the browser console.
 
 ### Setup
@@ -69,7 +67,7 @@ public class Context : StorageContext
 
 ### Usage
 
-See the full example in the sample app: https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Index.cshtml
+See the full example in the sample app: https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Index.razor
 
 Inject your context into your component:
 
@@ -191,8 +189,8 @@ You can annotate your model's propeties with `[Required]` and `[MaxLength(int)]`
 
 A Todo sample built with BlazorDB is included in the sample project:
 
-* [Todos.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.cshtml)
-* [TodoItemForm.cshtml](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.cshtml)
+* [Todos.razor](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/Todos.razor)
+* [TodoItemForm.razor](https://github.com/chanan/BlazorDB/blob/master/src/Sample/Pages/TodoItemForm.razor)
 
 ## Fluxor Integration Example
 
