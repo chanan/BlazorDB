@@ -1,4 +1,5 @@
 ﻿using BlazorDB;
+using BlazorStrap;
 using Microsoft.AspNetCore.Components.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +15,7 @@ namespace Sample
                 options.LogDebug = true;
                 options.Assembly = typeof(Program).Assembly;
             });
+            services.AddBootstrapCSS();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

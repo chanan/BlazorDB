@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using BlazorDB.Storage;
+﻿using BlazorDB.Storage;
+using System.Threading.Tasks;
 
 namespace BlazorDB
 {
@@ -13,12 +13,12 @@ namespace BlazorDB
         public async Task LogToConsole()
         {
             await Logger.StartContextType(GetType(), false);
-            var storageSets = StorageManagerUtil.GetStorageSets(GetType());
-            foreach (var prop in storageSets)
+            System.Collections.Generic.List<System.Reflection.PropertyInfo> storageSets = StorageManagerUtil.GetStorageSets(GetType());
+            foreach (System.Reflection.PropertyInfo prop in storageSets)
             {
-                var storageSet = prop.GetValue(this);
-                var method = storageSet.GetType().GetMethod("LogToConsole");
-                method.Invoke(storageSet, new object[]{});
+                object storageSet = prop.GetValue(this);
+                System.Reflection.MethodInfo method = storageSet.GetType().GetMethod("LogToConsole");
+                method.Invoke(storageSet, new object[] { });
             }
             Logger.EndGroup();
         }
@@ -30,7 +30,11 @@ namespace BlazorDB
 
         public Task Initialize()
         {
-            if (_initalized) return Task.CompletedTask;
+            if (_initalized)
+            {
+                return Task.CompletedTask;
+            }
+
             _initalized = true;
             return StorageManager.LoadContextFromLocalStorage(this);
         }

@@ -6,8 +6,8 @@ namespace BlazorDB
     {
         internal static string GetStorageTableName(Type Context, Type Model)
         {
-            var databaseName = GetFullyQualifiedTypeName(Context);
-            var tableName = GetFullyQualifiedTypeName(Model);
+            string databaseName = GetFullyQualifiedTypeName(Context);
+            string tableName = GetFullyQualifiedTypeName(Model);
             return $"{databaseName}-{tableName}";
         }
 

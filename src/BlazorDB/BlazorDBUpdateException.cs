@@ -6,6 +6,6 @@ namespace BlazorDB
     {
         public BlazorDBUpdateException(string error) : base(error)
         {
-        } 
+        }
     }
 }

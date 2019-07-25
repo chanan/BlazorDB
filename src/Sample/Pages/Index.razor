@@ -4,19 +4,19 @@
 
 <h1>BlazorDB Demo Site</h1>
 
-<button onclick="@OnclickAddPerson">Add Person</button>
+<BSButton Color="Color.Primary" @onclick="@OnclickAddPerson">Add Person</BSButton>
 
-<button onclick="@onclickRemovePerson">Remove Person</button>
+<BSButton Color="Color.Primary" @onclick="@onclickRemovePerson">Remove Person</BSButton>
 
-<button onclick="@OnclickGetPerson">Get Person</button>
+<BSButton Color="Color.Primary" @onclick="@OnclickGetPerson">Get Person</BSButton>
 
-<button onclick="@OnclickSaveChanges">SaveChanges</button>
+<BSButton Color="Color.Primary" @onclick="@OnclickSaveChanges">SaveChanges</BSButton>
 
 <h2>Validations</h2>
 
-<button onclick="@OnRequired">Required</button>
+<BSButton Color="Color.Primary" @onclick="@OnRequired">Required</BSButton>
 
-<button onclick="@OnMaxLength">Max Length</button>
+<BSButton Color="Color.Primary" @onclick="@OnMaxLength">Max Length</BSButton>
 
 @if (@Person != null)
 {

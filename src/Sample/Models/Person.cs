@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using BlazorDB.DataAnnotations;
+﻿using BlazorDB.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Sample.Models
 {

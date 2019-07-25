@@ -1,11 +1,11 @@
 ﻿using BlazorDB.Storage;
+using BlazorLogger;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.JSInterop;
-using BlazorLogger;
 
 namespace BlazorDB
 {
@@ -16,17 +16,25 @@ namespace BlazorDB
         public static IServiceCollection AddBlazorDB(this IServiceCollection serviceCollection,
             Action<Options> configure)
         {
-            if (configure == null) throw new ArgumentNullException(nameof(configure));
-            var options = new Options();
+            if (configure == null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
+            Options options = new Options();
             configure(options);
-            if (options.LogDebug) BlazorDBLogger.LogDebug = true;
+            if (options.LogDebug)
+            {
+                BlazorDBLogger.LogDebug = true;
+            }
+
             Scan(serviceCollection, options.Assembly);
             return serviceCollection;
         }
 
         private static void Scan(IServiceCollection serviceCollection, Assembly assembly)
         {
-            var types = ScanForContexts(serviceCollection, assembly);
+            IEnumerable<Type> types = ScanForContexts(serviceCollection, assembly);
             serviceCollection.AddJavascriptLogger();
             serviceCollection.AddSingleton<IBlazorDBInterop, BlazorDBInterop>();
             serviceCollection.AddSingleton<IBlazorDBLogger, BlazorDBLogger>();
@@ -35,22 +43,22 @@ namespace BlazorDB
             serviceCollection.AddSingleton<IStorageManagerSave, StorageManagerSave>();
             serviceCollection.AddSingleton<IStorageManagerLoad, StorageManagerLoad>();
 
-            foreach (var type in types)
+            foreach (Type type in types)
             {
                 serviceCollection.AddSingleton(type, s =>
                 {
-                    var jsRuntime = s.GetRequiredService<IJSRuntime>();
-                    var instance = Activator.CreateInstance(type);
-                    var smProp = type.GetProperty("StorageManager", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                    var storageManager = s.GetRequiredService<IStorageManager>();
+                    IJSRuntime jsRuntime = s.GetRequiredService<IJSRuntime>();
+                    object instance = Activator.CreateInstance(type);
+                    PropertyInfo smProp = type.GetProperty("StorageManager", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    IStorageManager storageManager = s.GetRequiredService<IStorageManager>();
                     smProp.SetValue(instance, storageManager);
 
-                    var lProp = type.GetProperty("Logger", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                    var logger = s.GetRequiredService<IBlazorDBLogger>();
+                    PropertyInfo lProp = type.GetProperty("Logger", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    IBlazorDBLogger logger = s.GetRequiredService<IBlazorDBLogger>();
                     lProp.SetValue(instance, logger);
 
-                    var smuProp = type.GetProperty("StorageManagerUtil", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                    var storageManagerUtil = s.GetRequiredService<IStorageManagerUtil>();
+                    PropertyInfo smuProp = type.GetProperty("StorageManagerUtil", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+                    IStorageManagerUtil storageManagerUtil = s.GetRequiredService<IStorageManagerUtil>();
                     smuProp.SetValue(instance, storageManagerUtil);
                     return instance;
                 });

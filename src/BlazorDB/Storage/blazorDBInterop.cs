@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.JSInterop;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.JSInterop;
 
 namespace BlazorDB.Storage
 {
@@ -33,7 +33,7 @@ namespace BlazorDB.Storage
         }
         public Task<bool> Log(params object[] list)
         {
-            var _list = new List<object>(list); //This line is needed see: https://github.com/aspnet/Blazor/issues/740
+            List<object> _list = new List<object>(list); //This line is needed see: https://github.com/aspnet/Blazor/issues/740
             return _jsRuntime.InvokeAsync<bool>("blazorDBInterop.logs");
         }
     }

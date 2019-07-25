@@ -7,19 +7,19 @@
 
 <h2>One to One</h2>
 
-<BlazorButton Color="Color.Primary" onclick="@OnAdd">Add a Person and Address</BlazorButton>
+<BSButton Color="Color.Primary" @onclick="@OnAdd">Add a Person and Address</BSButton>
 
-<BlazorButton Color="Color.Primary" onclick="@OnChange">Change Address</BlazorButton>
+<BSButton Color="Color.Primary" @onclick="@OnChange">Change Address</BSButton>
 
 <h2>One to Many</h2>
 
-<BlazorButton Color="Color.Primary" onclick="@OnAddMulti">Add a Person with multi Addresses</BlazorButton>
+<BSButton Color="Color.Primary" @onclick="@OnAddMulti">Add a Person with multi Addresses</BSButton>
 
-<BlazorButton Color="Color.Primary" onclick="@OnLoadPerson">Load Person</BlazorButton>
+<BSButton Color="Color.Primary" @onclick="@OnLoadPerson">Load Person</BSButton>
 
 <h2>Delete Test (Should throw exception)</h2>
 
-<BlazorButton Color="Color.Primary" onclick="@OnDelete">Add a Person with Addresses then delete Address</BlazorButton>
+<BSButton Color="Color.Primary" @onclick="@OnDelete">Add a Person with Addresses then delete Address</BSButton>
 
 <h2>Result</h2>
 
@@ -29,17 +29,17 @@
         @_person.FirstName
     </div>
     <div>Addresses:</div>
-    <ListGroup>
+    <BSListGroup>
         @foreach (var address in _person.OtherAddresses)
         {
-            <ListGroupItem>
-                <ListGroupItemHeading>@address.Id</ListGroupItemHeading>
-                <ListGroupItemText>
+            <BSListGroupItem>
+                <BSListGroupItemHeading>@address.Id</BSListGroupItemHeading>
+                <BSListGroupItemText>
                     @address.Street
-                </ListGroupItemText>
-            </ListGroupItem>
+                </BSListGroupItemText>
+            </BSListGroupItem>
         }
-    </ListGroup>
+    </BSListGroup>
 }
 
 @functions {
